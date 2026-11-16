@@ -9,6 +9,7 @@ import time
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from ShiviMusic.utils.formatters import stream_type_text
 from ShiviMusic import YouTube, app
 from ShiviMusic.core.call import Shivi
 from ShiviMusic.misc import SUDOERS, db
@@ -761,6 +762,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                     title[:23],
                     duration,
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     button
@@ -846,6 +848,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                     title[:23],
                     duration,
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     button
@@ -969,6 +972,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                         title[:23],
                         duration,
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
@@ -1000,6 +1004,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                         title[:23],
                         duration,
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
@@ -1034,6 +1039,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                         title[:23],
                         duration,
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
