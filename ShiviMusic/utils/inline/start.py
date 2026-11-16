@@ -92,7 +92,7 @@ def private_panel(_):
     buttons = [
         [
             _btn(
-                text="ʌᴅᴅ ϻє ɪη ʏσυʀ ɢʀσυᴘ",
+                text="✙ ʌᴅᴅ ϻє ɪη ʏσυʀ ɢʀσυᴘ ✙",
                 url=f"https://t.me/{app.username}?startgroup=true",
                 icon_custom_emoji_id="6285259654977036895",
                 style="random",
