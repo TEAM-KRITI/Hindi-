@@ -46,9 +46,9 @@ def draw_round_rect(img, xy, r, fill=None):
     draw.pieslice((x0, y1 - 2*r, x0 + 2*r, y1), 90, 180, fill=fill)
     draw.pieslice((x1 - 2*r, y1 - 2*r, x1, y1), 0, 90, fill=fill)
 
-async def get_thumb(videoid: str, player_username: str = None) -> str:
-    if not player_username:
-        player_username = app.username
+# FIX: user_name bhi accept karta hai (stream.py user_name= bhejta hai)
+async def get_thumb(videoid: str, player_username: str = None, user_name: str = None, **kwargs) -> str:
+    player_username = player_username or user_name or app.username
 
     path = f"cache/{videoid}.png"
     temp = f"cache/{videoid}_temp.png"
@@ -103,6 +103,7 @@ async def get_thumb(videoid: str, player_username: str = None) -> str:
     yt = Image.open(temp).resize((360, 360))
     bg.paste(yt, (cx+30, cy+30))
 
+    # FIX: font path PurviMusic -> ShiviMusic
     try:
         title_f = ImageFont.truetype("ShiviMusic/assets/f.ttf", 48)
         meta_f = ImageFont.truetype("ShiviMusic/assets/font.ttf", 30)
