@@ -70,7 +70,7 @@ async def stream(
             if duration_sec > config.DURATION_LIMIT:
                 continue
             if await is_active_chat(chat_id):
-                await put_queue(chat_id, original_chat_id, f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio")
+                await put_queue(chat_id, original_chat_id, f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "ᴠɪᴅᴇᴏ 🎬" if video else "ᴀᴜᴅɪᴏ 🎧")
                 position = len(db.get(chat_id)) - 1
                 count += 1
                 msg += f"{count}. {title[:70]}\n"
