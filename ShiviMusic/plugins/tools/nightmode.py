@@ -92,6 +92,15 @@ def _btn(text, cb, style=None):
     return InlineKeyboardButton(text, callback_data=cb)
 
 
+def _url_btn(text, url, style=None):
+    if style is not None:
+        try:
+            return InlineKeyboardButton(text, url=url, style=style)
+        except TypeError as e:
+            print(f"[nightmode] style not supported by this version: {e}")
+    return InlineKeyboardButton(text, url=url)
+
+
 # =======================================================
 # ɴɪɢʜᴛᴍᴏᴅє ʙᴜᴛᴛᴏɴꜱ
 # =======================================================
@@ -107,7 +116,7 @@ buttons = InlineKeyboardMarkup(
 
 
 # =======================================================
-# ᴀᴅᴅ ʙᴏᴛ ʙᴜᴛᴛᴏɴ
+# ᴀᴅᴅ ʙᴏᴛ ʙᴜᴛᴛᴏɴ (ɢʀєєɴ)
 # =======================================================
 
 def night_msg_buttons():
@@ -123,9 +132,10 @@ def night_msg_buttons():
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton(
-                    "ᴀᴅᴅ ᴍє ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ",
-                    url=f"https://t.me/{username}?startgroup=true"
+                _url_btn(
+                    "⊚ ᴀᴅᴅ ᴍє ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⊚",
+                    f"https://t.me/{username}?startgroup=true",
+                    GREEN,
                 )
             ]
         ]
@@ -288,22 +298,13 @@ async def start_nightmode():
             group_name = group.title or "ᴜɴᴋɴᴏᴡɴ ɢʀᴏᴜᴘ"
 
             caption = (
-                "**━━━━━━━━━━━━━━━━━━━━**\n"
-                "**🌌  ɢᴏᴏᴅ ɴɪɢʜᴛ єᴠєʀʏᴏɴє!  🌌**\n"
-                "**━━━━━━━━━━━━━━━━━━━━**\n\n"
-
-                "**🔒 ɢʀᴏᴜᴘ ɪꜱ ɴᴏᴡ ᴄʟᴏꜱєᴅ ꜰᴏʀ ᴛʜє ɴɪɢʜᴛ.**\n"
-                "**😴 ᴀʟʟ ᴍєᴍʙєʀꜱ ᴀʀє ᴍᴜᴛєᴅ ᴛɪʟʟ ᴍᴏʀɴɪɴɢ.**\n"
-                "**⏰ ɢʀᴏᴜᴘ ᴡɪʟʟ ᴏᴘєɴ ᴀᴛ 06:00 ᴀᴍ [ɪꜱᴛ].**\n\n"
-
-                "**✨ ꜱᴡєєᴛ ᴅʀєᴀᴍꜱ, ꜱʟєєᴘ ᴡєʟʟ ᴀɴᴅ ꜱєє ʏᴏᴜ ᴛᴏᴍᴏʀʀᴏᴡ!**\n\n"
-
-                f"**👥 ɢʀᴏᴜᴘ : {group_name}**\n"
-                f"**🆔 ɪᴅ : `{chat_id}`**\n\n"
-
-                "**━━━━━━━━━━━━━━━━━━━━**\n"
-                "**⚡ ᴘᴏᴡєʀєᴅ ʙʏ : "
-                "[ᴋɪʀᴛɪ ᴍᴜꜱɪᴄ](https://t.me/kirti_bots)**"
+                "**🌙 --ɴɪɢʜᴛᴍᴏᴅє sᴛᴀʀᴛєᴅ ɢʀᴏᴜᴘ ᴄʟᴏsєᴅ.--**\n\n"
+                "**⊚ ɴᴏɴ-ᴀᴅᴍɪɴs ᴄᴀɴ'ᴛ ᴄʜᴀᴛ ɴᴏᴡ**\n"
+                "**ɢᴏᴏᴅ ɴɪɢʜᴛ єᴠєʀʏᴏɴє 🌙**\n\n"
+                f"**✧ ᴄʜᴀᴛ ɴᴀᴍє : {group_name}**\n"
+                f"**✧ ᴄʜᴀᴛ ɪᴅ : {chat_id}**\n\n"
+                "**⊚ ᴘᴏᴡєʀєᴅ ʙʏ : "
+                "[ᴋɪʀᴛɪ ᴍᴜsɪᴄ](https://t.me/kirti_bots)**"
             )
 
             await send_night_msg(chat_id, caption)
@@ -335,22 +336,13 @@ async def close_nightmode():
             group_name = group.title or "ᴜɴᴋɴᴏᴡɴ ɢʀᴏᴜᴘ"
 
             caption = (
-                "**━━━━━━━━━━━━━━━━━━━━**\n"
-                "**🌅  ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ єᴠєʀʏᴏɴє!  🌅**\n"
-                "**━━━━━━━━━━━━━━━━━━━━**\n\n"
-
-                "**🔓 ɢʀᴏᴜᴘ ɪꜱ ɴᴏᴡ ᴏᴘєɴ ꜰᴏʀ ᴀʟʟ.**\n"
-                "**💬 ʏᴏᴜ ᴄᴀɴ ɴᴏᴡ ꜱєɴᴅ ᴍєꜱꜱᴀɢєꜱ ᴀɢᴀɪɴ.**\n"
-                "**🌙 ɢʀᴏᴜᴘ ᴡɪʟʟ ᴄʟᴏꜱє ᴀᴛ 12:00 ᴀᴍ [ɪꜱᴛ].**\n\n"
-
-                "**☀️ ʜᴀᴠє ᴀ ʙєᴀᴜᴛɪꜰᴜʟ ᴀɴᴅ ᴘʀᴏᴅᴜᴄᴛɪᴠє ᴅᴀʏ!**\n\n"
-
-                f"**👥 ɢʀᴏᴜᴘ : {group_name}**\n"
-                f"**🆔 ɪᴅ : `{chat_id}`**\n\n"
-
-                "**━━━━━━━━━━━━━━━━━━━━**\n"
-                "**⚡ ᴘᴏᴡєʀєᴅ ʙʏ : "
-                "[ᴋɪʀᴛɪ ᴍᴜꜱɪᴄ](https://t.me/kirti_bots)**"
+                "**☀️ --ɴɪɢʜᴛᴍᴏᴅє єɴᴅєᴅ ɢʀᴏᴜᴘ ᴏᴘєɴєᴅ.--**\n\n"
+                "**⊚ ɴᴏɴ-ᴀᴅᴍɪɴs ᴄᴀɴ ᴄʜᴀᴛ ɴᴏᴡ**\n"
+                "**ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ єᴠєʀʏᴏɴє 🌸**\n\n"
+                f"**✧ ᴄʜᴀᴛ ɴᴀᴍє : {group_name}**\n"
+                f"**✧ ᴄʜᴀᴛ ɪᴅ : {chat_id}**\n\n"
+                "**⊚ ᴘᴏᴡєʀєᴅ ʙʏ : "
+                "[ᴋɪʀᴛɪ ᴍᴜsɪᴄ](https://t.me/kirti_bots)**"
             )
 
             await send_night_msg(chat_id, caption)
