@@ -9,6 +9,7 @@ from pyrogram.types import InlineKeyboardMarkup, Message
 
 import config
 
+from ShiviMusic.utils.formatters import stream_type_text
 from ShiviMusic import YouTube, app
 from ShiviMusic.core.call import Shivi
 from ShiviMusic.utils.recommend import send_recommendations
@@ -513,6 +514,7 @@ async def skip(cli, message: Message, _, chat_id):
                     title[:23],
                     current.get("dur", "Unknown"),
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     button
@@ -614,6 +616,7 @@ async def skip(cli, message: Message, _, chat_id):
                     title[:23],
                     current.get("dur", "Unknown"),
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     button
@@ -753,6 +756,7 @@ async def skip(cli, message: Message, _, chat_id):
                         title[:23],
                         current.get("dur", "Unknown"),
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
@@ -787,6 +791,7 @@ async def skip(cli, message: Message, _, chat_id):
                         title[:23],
                         current.get("dur", "Unknown"),
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
@@ -828,6 +833,7 @@ async def skip(cli, message: Message, _, chat_id):
                         title[:23],
                         current.get("dur", "Unknown"),
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         button
