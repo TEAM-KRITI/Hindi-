@@ -48,7 +48,12 @@ def draw_round_rect(img, xy, r, fill=None):
 
 # FIX: user_name bhi accept karta hai (stream.py user_name= bhejta hai)
 async def get_thumb(videoid: str, player_username: str = None, user_name: str = None, **kwargs) -> str:
-    player_username = player_username or user_name or app.username
+    # Hamesha BOT ka username dikhao (user_name sirf compatibility ke liye hai, use nahi hota)
+    bot_username = getattr(app, "username", None)
+    if not bot_username:
+        me = getattr(app, "me", None)
+        bot_username = getattr(me, "username", None) or "Bot"
+    player_username = bot_username
 
     path = f"cache/{videoid}.png"
     temp = f"cache/{videoid}_temp.png"
