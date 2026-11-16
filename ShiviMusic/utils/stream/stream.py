@@ -14,6 +14,7 @@ from typing import Union
 from pyrogram.types import InlineKeyboardMarkup
 
 import config
+from ShiviMusic.utils.formatters import stream_type_text
 from ShiviMusic import Carbon, YouTube, app
 from ShiviMusic.core.call import Shivi as Sona
 from ShiviMusic.misc import db
@@ -90,7 +91,7 @@ async def stream(
                     original_chat_id,
                     photo=img,
                     has_spoiler=True,
-                    caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention),
+                    caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
@@ -145,7 +146,7 @@ async def stream(
             run = await app.send_photo(
                 original_chat_id,
                 photo=img,
-                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention),
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -175,7 +176,7 @@ async def stream(
             run = await app.send_photo(
                 original_chat_id,
                 photo=config.SOUNCLOUD_IMG_URL,
-                caption=_["stream_1"].format(config.SUPPORT_CHAT, title[:23], duration_min, user_mention),
+                caption=_["stream_1"].format(config.SUPPORT_CHAT, title[:23], duration_min, user_mention, stream_type_text("audio")),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -209,7 +210,7 @@ async def stream(
             run = await app.send_photo(
                 original_chat_id,
                 photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL,
-                caption=_["stream_1"].format(link, title[:23], duration_min, user_mention),
+                caption=_["stream_1"].format(link, title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -246,7 +247,7 @@ async def stream(
             run = await app.send_photo(
                 original_chat_id,
                 photo=img,
-                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention),
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
