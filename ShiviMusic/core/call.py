@@ -24,6 +24,7 @@ try:
 except Exception:  # py-tgcalls 3.x me module na ho to bot band na ho
     PyTgCallsSession = None
 import config
+from ShiviMusic.utils.formatters import stream_type_text
 from ShiviMusic import LOGGER, YouTube, app
 from ShiviMusic.misc import db
 from ShiviMusic.utils.database import (
@@ -372,6 +373,7 @@ class Call(PyTgCalls):
                     title[:23],
                     duration_min,
                     "ᴧᴜᴛᴏᴘʟᴧʏ ✨",
+                    stream_type_text("audio"),
                 ),
                 reply_markup=InlineKeyboardMarkup(button),
             )
@@ -521,6 +523,7 @@ class Call(PyTgCalls):
                     title[:23],
                     check[0]["dur"],
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(button),
             )
@@ -558,6 +561,7 @@ class Call(PyTgCalls):
                     title[:23],
                     check[0]["dur"],
                     user,
+                    stream_type_text(streamtype),
                 ),
                 reply_markup=InlineKeyboardMarkup(button),
             )
@@ -601,7 +605,8 @@ class Call(PyTgCalls):
                         else config.TELEGRAM_VIDEO_URL
                     ),
                     caption=_["stream_1"].format(
-                        config.SUPPORT_GROUP, title[:23], check[0]["dur"], user
+                        config.SUPPORT_GROUP, title[:23], check[0]["dur"], user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
@@ -613,7 +618,8 @@ class Call(PyTgCalls):
                     chat_id=original_chat_id,
                     photo=config.SOUNCLOUD_IMG_URL,
                     caption=_["stream_1"].format(
-                        config.SUPPORT_GROUP, title[:23], check[0]["dur"], user
+                        config.SUPPORT_GROUP, title[:23], check[0]["dur"], user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
@@ -630,6 +636,7 @@ class Call(PyTgCalls):
                         title[:23],
                         check[0]["dur"],
                         user,
+                        stream_type_text(streamtype),
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
