@@ -56,14 +56,6 @@ def _control_rows(chat_id, style):
     ]
 
 
-def _fav_row(chat_id, style):
-    """Now-playing message ke neeche ❤️ Favourite / 📂 Playlist buttons."""
-    return [
-        InlineKeyboardButton(text="❤️ ꜰᴀᴠ", callback_data=f"FavNow {chat_id}", style=style),
-        InlineKeyboardButton(text="📂 ᴘʟᴀʏʟɪsᴛ", callback_data=f"PlPick {chat_id}", style=style),
-    ]
-
-
 def stream_markup_timer(_, chat_id, played, dur):
     style = random.choice(STYLES)
     played_sec = time_to_seconds(played)
@@ -79,7 +71,6 @@ def stream_markup_timer(_, chat_id, played, dur):
             ),
         ],
         _control_rows(chat_id, style),
-        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
@@ -91,7 +82,6 @@ def stream_markup(_, chat_id):
     style = random.choice(STYLES)
     buttons = [
         _control_rows(chat_id, style),
-        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
