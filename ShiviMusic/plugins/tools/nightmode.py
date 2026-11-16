@@ -24,7 +24,7 @@ from ShiviMusic.utils.nightmodedb import (
 )
 
 
-PHOTO_URL = "https://yukiapi.site/file/pABl4iKv"
+PHOTO_URL = "https://anubox.vercel.app/1794826991088.jpg"
 
 
 # =======================================================
