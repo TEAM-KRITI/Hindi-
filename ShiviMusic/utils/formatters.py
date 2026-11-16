@@ -201,3 +201,10 @@ formats = [
 # 🔗 Source link : GitHub.com/Im-Notcoder/Shivi-V2
 # 📢 Telegram channel : t.me/Purvi_Bots
 # ===========================================================
+
+
+def stream_type_text(stype) -> str:
+    """Return a display label for the stream type (audio / video)."""
+    if str(stype).lower() == "video":
+        return "🎬 ᴠɪᴅᴇᴏ"
+    return "🎵 ᴀᴜᴅɪᴏ"
