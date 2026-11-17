@@ -32,6 +32,8 @@ autoplaydb = mongodb.autoplaymode
 thumbdb = mongodb.thumbmode
 favdb = mongodb.userfavourites
 userplaylistdb = mongodb.userplaylists
+profiledb = mongodb.userprofiles
+sharedb = mongodb.usershares
 
 
 # ===========================================================
@@ -1321,6 +1323,63 @@ async def remove_banned_user(user_id: int):
 # ===========================================================
 
 
+# ---------------- music profile (favourite song on profile) ----------------
+# doc: {"user_id": int, "song": {vidid,title,dur,added} | None, "pl_private": bool}
+
+async def get_profile(user_id: int) -> dict:
+    doc = await profiledb.find_one({"user_id": user_id})
+    return dict(doc) if doc else {}
+
+
+async def set_profile_song(user_id: int, song: dict):
+    await profiledb.update_one(
+        {"user_id": user_id}, {"$set": {"song": _clean_song(song)}}, upsert=True
+    )
+
+
+async def clear_profile_song(user_id: int):
+    await profiledb.update_one(
+        {"user_id": user_id}, {"$unset": {"song": ""}}, upsert=True
+    )
+
+
+async def set_playlists_private(user_id: int, private: bool):
+    await profiledb.update_one(
+        {"user_id": user_id}, {"$set": {"pl_private": bool(private)}}, upsert=True
+    )
+
+
+# ---------------- shares (friends ko song / playlist share) ----------------
+# kind = "song" -> data = song dict | kind = "playlist" -> data = {"uid", "pid"}
+
+MAX_SHARES = 5000
+
+
+async def create_share(from_id: int, from_name: str, kind: str, data: dict) -> str:
+    token = secrets.token_hex(4)
+    await sharedb.insert_one(
+        {
+            "token": token,
+            "from_id": from_id,
+            "from_name": str(from_name or "")[:64],
+            "kind": kind,
+            "data": data,
+            "ts": int(_time.time()),
+        }
+    )
+    try:  # collection bada na ho: sabse purane share hata do
+        if await sharedb.estimated_document_count() > MAX_SHARES:
+            old = await sharedb.find({}, {"_id": 1}).sort("ts", 1).limit(500).to_list(500)
+            await sharedb.delete_many({"_id": {"$in": [o["_id"] for o in old]}})
+    except Exception:
+        pass
+    return token
+
+
+async def get_share(token: str):
+    return await sharedb.find_one({"token": token})
+
+
 # ===========================================================
 # INDEXES  (startup par ek baar - queries bahut fast ho jati hain)
 # ===========================================================
@@ -1333,7 +1392,7 @@ async def ensure_indexes():
         (gbansdb, "user_id"), (langdb, "chat_id"), (onoffdb, "on_off"),
         (playmodedb, "chat_id"), (playtypedb, "chat_id"), (skipdb, "chat_id"),
         (sudoersdb, "sudo"), (usersdb, "user_id"), (playlistdb, "chat_id"),
-        (autoplaydb, "chat_id"), (thumbdb, "chat_id"), (favdb, "user_id"), (userplaylistdb, "user_id"),
+        (autoplaydb, "chat_id"), (thumbdb, "chat_id"), (favdb, "user_id"), (userplaylistdb, "user_id"), (profiledb, "user_id"), (sharedb, "token"),
     ]
     for col, field in pairs:
         try:
