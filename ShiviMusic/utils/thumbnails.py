@@ -27,8 +27,8 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 # ----------------------------------------------------------------------------
 #  EDIT THESE TWO LINES
 # ----------------------------------------------------------------------------
-PLAYER_TAG = "@SonaliMusicBot"   # "Player : ...."  (left side)
-CREDIT_TAG = "@PurviBots"        # "By : ...."      (bottom right)
+PLAYER_TAG = "@Kirtiprobot"   # "Player : ...."  (left side)
+CREDIT_TAG = "@kirti_bots"        # "By : ...."      (bottom right)
 
 # ----------------------------------------------------------------------------
 #  DESIGN CONSTANTS (1280 x 720)
