@@ -134,23 +134,6 @@ def help_pannel(_, START: Union[bool, int] = None):
             ],
             [
                 _btn(
-                    text="• ᴡᴇʟᴄᴏᴍᴇ •",
-                    callback_data="wel_cb",
-                    style="random",
-                ),
-                _btn(
-                    text="• ʟᴏᴄᴋs •",
-                    callback_data="lock_cb",
-                    style="random",
-                ),
-                _btn(
-                    text="• ɴɪɢʜᴛ-ᴍᴏᴅᴇ •",
-                    callback_data="night_cb",
-                    style="random",
-                ),
-            ],
-            [
-                _btn(
                     text="• ᴍᴜsɪᴄ ᴍᴏᴏᴅ •",
                     callback_data="help_callback hb13",
                     style="random",
