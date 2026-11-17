@@ -11,7 +11,7 @@ import os, random, aiofiles, aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from ytSearch import VideosSearch
 from config import YOUTUBE_IMG_URL
-from PurviMusic import app
+from ShiviMusic import app
 
 CACHE_DIR = "cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -103,9 +103,9 @@ async def get_thumb(videoid: str, player_username: str = None) -> str:
     bg.paste(yt, (cx+30, cy+30))
 
     try:
-        title_f = ImageFont.truetype("PurviMusic/assets/f.ttf", 48)
-        meta_f = ImageFont.truetype("PurviMusic/assets/font.ttf", 30)
-        small_f = ImageFont.truetype("PurviMusic/assets/font.ttf", 26)
+        title_f = ImageFont.truetype("ShiviMusic/assets/f.ttf", 48)
+        meta_f = ImageFont.truetype("ShiviMusic/assets/font.ttf", 30)
+        small_f = ImageFont.truetype("ShiviMusic/assets/font.ttf", 26)
     except:
         title_f = meta_f = small_f = ImageFont.load_default()
 
