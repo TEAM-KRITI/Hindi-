@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H = 1280, 720
 BLUR_RADIUS = 30
 ORANGE = (255, 140, 0, 255)
-BY_TEXT = "By : @PurviBots"  # neeche right me yellow text
+BY_TEXT = "By : @kirti_bots"  # neeche right me yellow text
 BY_COLOR = (255, 238, 0, 255)
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
@@ -185,7 +185,7 @@ def _bot_username():
             return "@" + str(config.BOT_USERNAME).lstrip("@")
     except Exception:
         pass
-    return "@MusicBot"
+    return "@Kirtiprobot"
 
 
 def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, path: str, views=None):
