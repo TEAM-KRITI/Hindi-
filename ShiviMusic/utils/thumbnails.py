@@ -1,171 +1,366 @@
-# =======================================================
-# ©️ 2026-27 All Rights Reserved by Purvi Bots (Im-Notcoder) 🚀
+# ===========================================================
+# 🖼 NOW PLAYING THUMBNAIL — "NOW PLAYING" orange card design
+#
+# Design: blur background, left me NOW PLAYING pill + title (2 line)
+# + channel + views/duration + progress bar + Player name,
+# right me orange glow frame ke andar song ki image, neeche
+# right me "By : @..." (yellow).
+#
+# Use:
+#   from ShiviMusic.utils.thumbnails import get_thumb
+#   thumb = await get_thumb(videoid)
+#
+# 🔤 TITLE FONT: assets/f.ttf (Honey Salt) -> screenshot jaisa handwriting.
+# Agar exact font chahiye to usko ShiviMusic/assets/title_font.ttf
+# naam se rakh do, wahi sabse pehle use hoga.
+# ===========================================================
 
-# This source code is under MIT License 📜 Unauthorized forking, importing, or using this code without giving proper credit will result in legal action ⚠️
- 
-# 📩 DM for permission : @TheSigmaCoder
-# =======================================================
+import asyncio
+import glob
+import io
+import os
+import random
+import traceback
 
-import os, random, aiofiles, aiohttp
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
-from py_yt import VideosSearch
-from config import YOUTUBE_IMG_URL
-from ShiviMusic import app
+import aiohttp
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-CACHE_DIR = "cache"
-os.makedirs(CACHE_DIR, exist_ok=True)
+W, H = 1280, 720
+BLUR_RADIUS = 30
+ORANGE = (255, 140, 0, 255)
+BY_TEXT = "By : @PurviBots"  # neeche right me yellow text
+BY_COLOR = (255, 238, 0, 255)
 
-ACCENT_COLORS = [
-    (120, 140, 255),
-    (255, 100, 190),
-    (255, 210, 90),
-    (255, 90, 90),
-    (180, 120, 255),
+_ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
+
+
+def _a(name):
+    return os.path.join(_ASSETS, name)
+
+
+# Title font (pehli mili hui file use hoti hai)
+_TITLE_FONTS = [
+    _a("title_font.ttf"),
+    _a("f.ttf"),  # Honey Salt
+    _a("fonts.ttf"),  # Boogaloo
+    _a("font.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+]
+_BOLD_FONTS = [
+    _a("Poppins-Bold.ttf"),
+    _a("font.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+]
+_MED_FONTS = [
+    _a("Poppins-Medium.ttf"),
+    _a("font.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
 ]
 
-def trim(text, font, max_w):
-    if font.getlength(text) <= max_w:
+
+def _load(cands, size):
+    for p in cands:
+        try:
+            return ImageFont.truetype(p, size)
+        except Exception:
+            continue
+    try:
+        return ImageFont.load_default(size)
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _cover_crop(img: Image.Image, w: int, h: int) -> Image.Image:
+    iw, ih = img.size
+    sc = max(w / iw, h / ih)
+    img = img.resize((int(iw * sc) + 1, int(ih * sc) + 1), Image.LANCZOS)
+    l, t = (img.width - w) // 2, (img.height - h) // 2
+    return img.crop((l, t, l + w, t + h))
+
+
+def _blurred_background(cover: Image.Image) -> Image.Image:
+    bg = _cover_crop(cover, W, H).filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
+    dark = Image.new("RGB", (W, H), (20, 20, 24))
+    return Image.blend(bg, dark, 0.62)
+
+
+def _rounded(img: Image.Image, radius: int) -> Image.Image:
+    img = img.convert("RGBA")
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, *img.size), radius, fill=255)
+    img.putalpha(mask)
+    return img
+
+
+def _fit_text(draw, text: str, font, max_w: int) -> str:
+    text = str(text or "")
+    if draw.textlength(text, font=font) <= max_w:
         return text
-    while font.getlength(text + "…") > max_w and text:
+    while text and draw.textlength(text + "…", font=font) > max_w:
         text = text[:-1]
-    return text + "…"
+    return text.rstrip() + "…"
 
-def draw_round_rect(img, xy, r, fill=None):
-    x0, y0, x1, y1 = map(int, xy)
-    if x1 <= x0 or y1 <= y0:
-        return
 
-    draw = ImageDraw.Draw(img)
-    r = min(r, (x1 - x0) // 2, (y1 - y0) // 2)
+def _wrap_2_lines(draw, text: str, font, max_w: int):
+    """Title ko max 2 line me todta hai; 2nd line lambi ho to '…' lagata hai."""
+    words = str(text or "").split()
+    lines, cur = [], ""
+    for w in words:
+        t = (cur + " " + w).strip()
+        if draw.textlength(t, font=font) <= max_w or not cur:
+            cur = t
+        else:
+            lines.append(cur)
+            cur = w
+        if len(lines) == 2:
+            break
+    if len(lines) < 2:
+        lines.append(cur)
+        rest = ""
+    else:
+        used = " ".join(lines)
+        rest = str(text)[len(used):].strip()
+    lines = lines[:2]
+    full = " ".join(lines)
+    if rest or (len(str(text).split()) > len(full.split())):
+        lines[-1] = lines[-1] + " …"
+    lines = [_fit_text(draw, ln, font, max_w) for ln in lines]
+    return lines
 
-    draw.rectangle((x0 + r, y0, x1 - r, y1), fill=fill)
-    draw.rectangle((x0, y0 + r, x1, y1 - r), fill=fill)
 
-    draw.pieslice((x0, y0, x0 + 2*r, y0 + 2*r), 180, 270, fill=fill)
-    draw.pieslice((x1 - 2*r, y0, x1, y0 + 2*r), 270, 360, fill=fill)
-    draw.pieslice((x0, y1 - 2*r, x0 + 2*r, y1), 90, 180, fill=fill)
-    draw.pieslice((x1 - 2*r, y1 - 2*r, x1, y1), 0, 90, fill=fill)
-
-# FIX: user_name bhi accept karta hai (stream.py user_name= bhejta hai)
-async def get_thumb(videoid: str, player_username: str = None, user_name: str = None, **kwargs) -> str:
-    # Hamesha BOT ka username dikhao (user_name sirf compatibility ke liye hai, use nahi hota)
-    bot_username = getattr(app, "username", None)
-    if not bot_username:
-        me = getattr(app, "me", None)
-        bot_username = getattr(me, "username", None) or "Bot"
-    player_username = bot_username
-
-    path = f"cache/{videoid}.png"
-    temp = f"cache/{videoid}_temp.png"
-
-    if os.path.isfile(path):
-        return path
-
-    try:
-        vs = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
-        data = (await vs.next())["result"][0]
-        title = data.get("title", "Unknown")
-        channel = (data.get("channel") or {}).get("name", "Unknown Artist")
-        thumb = data["thumbnails"][0]["url"]
-        duration = data.get("duration", "LIVE")
-        views = (data.get("viewCount") or {}).get("short", "0 views")
-    except Exception as e:
-        print(f"[get_thumb] search failed: {e}")
-        title, channel, thumb, duration, views = "Unknown", "Unknown Artist", YOUTUBE_IMG_URL, "LIVE", "0 views"
-
-    accent = random.choice(ACCENT_COLORS)
-
-    try:
-        async with aiohttp.ClientSession() as s:
-            async with s.get(thumb) as r:
-                if r.status != 200:
-                    return None
-                data = await r.read()
-                if not data:
-                    return None
-                async with aiofiles.open(temp, "wb") as f:
-                    await f.write(data)
-    except:
+def _fmt_views(v):
+    """Number/text ko 521M / 12K jaisa chhota karta hai."""
+    if v is None:
         return None
+    if isinstance(v, str):
+        digits = "".join(ch for ch in v if ch.isdigit())
+        if not digits:
+            return v.strip() or None
+        if any(ch in v for ch in "KMBkmb"):
+            return v.split(" ")[0].upper()
+        n = int(digits)
+    else:
+        n = int(v)
+    for div, suf in ((1_000_000_000, "B"), (1_000_000, "M"), (1_000, "K")):
+        if n >= div:
+            val = n / div
+            return (f"{val:.0f}" if val >= 100 else f"{val:.1f}".rstrip("0").rstrip(".")) + suf
+    return str(n)
 
+
+def _dur_to_sec(dur):
     try:
-        bg = Image.open(temp).resize((1280, 720)).convert("RGBA")
-    except:
-        if os.path.exists(temp):
-            os.remove(temp)
-        return None
+        parts = [int(x) for x in str(dur).split(":")]
+    except Exception:
+        return 0
+    sec = 0
+    for p in parts:
+        sec = sec * 60 + p
+    return sec
 
-    bg = bg.filter(ImageFilter.GaussianBlur(35))
-    bg = ImageEnhance.Brightness(bg).enhance(0.35)
-    draw = ImageDraw.Draw(bg)
 
-    cx, cy = 90, 120
-    cw, ch = 420, 420
+def _sec_to_dur(sec):
+    sec = int(sec)
+    h, rem = divmod(sec, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
-    draw_round_rect(bg, (cx-8, cy-8, cx+cw+8, cy+ch+8), 50, fill=accent)
-    draw_round_rect(bg, (cx, cy, cx+cw, cy+ch), 45, fill=(15, 15, 15))
 
-    yt = Image.open(temp).resize((360, 360))
-    bg.paste(yt, (cx+30, cy+30))
-
-    # FIX: font path PurviMusic -> ShiviMusic
+def _bot_username():
+    """Jo bhi music bot chal raha hai, uska username (har deploy me apne aap alag)."""
     try:
-        title_f = ImageFont.truetype("ShiviMusic/assets/f.ttf", 48)
-        meta_f = ImageFont.truetype("ShiviMusic/assets/font.ttf", 30)
-        small_f = ImageFont.truetype("ShiviMusic/assets/font.ttf", 26)
-    except:
-        title_f = meta_f = small_f = ImageFont.load_default()
+        from ShiviMusic import app
 
-    ix = cx + cw + 90
+        u = getattr(app, "username", None)
+        if not u and getattr(app, "me", None):
+            u = app.me.username
+        if u:
+            return "@" + str(u).lstrip("@")
+    except Exception:
+        pass
+    try:
+        import config
 
-    label = "NOW PLAYING"
-    pad_x, pad_y = 30, 12
+        if getattr(config, "BOT_USERNAME", None):
+            return "@" + str(config.BOT_USERNAME).lstrip("@")
+    except Exception:
+        pass
+    return "@MusicBot"
 
-    text_w = small_f.getlength(label)
-    text_h = small_f.size
 
-    draw_round_rect(bg, (ix, 160, ix + text_w + pad_x*2, 160 + text_h + pad_y*2), 30, fill=accent)
-    draw.text((ix + pad_x, 160 + pad_y), label, font=small_f, fill=(0, 0, 0))
+def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, path: str, views=None):
+    cover = cover.convert("RGB")
+    canvas = _blurred_background(cover).convert("RGBA")
+    white = (255, 255, 255, 255)
 
-    title = trim(title, title_f, 620)
-    draw.text((ix, 230), title, font=title_f, fill=(255,255,255))
-    draw.line((ix, 295, ix+620, 295), fill=accent, width=4)
+    # ---- right: orange glow frame + song image ----
+    fx0, fy0, fx1, fy1 = 643, 107, 1228, 593
+    glow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).rounded_rectangle((fx0, fy0, fx1, fy1), 34, outline=(255, 140, 0, 230), width=14)
+    canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14)))
+    d = ImageDraw.Draw(canvas)
+    d.rounded_rectangle((fx0, fy0, fx1, fy1), 34, outline=ORANGE, width=12)
+    ix0, iy0, ix1, iy1 = fx0 + 17, fy0 + 18, fx1 - 18, fy1 - 18
+    canvas.alpha_composite(_rounded(_cover_crop(cover, ix1 - ix0, iy1 - iy0), 18), (ix0, iy0))
+    d = ImageDraw.Draw(canvas)
 
-    channel = trim(channel, meta_f, 420)
-    draw.text((ix, 330), "Artist :", font=meta_f, fill=(200,200,200))
-    draw.text((ix+160, 330), channel, font=meta_f, fill=accent)
+    # ---- NOW PLAYING pill ----
+    d.rounded_rectangle((80, 116, 326, 154), 19, fill=ORANGE)
+    d.text((203, 136), "NOW PLAYING", font=_load(_BOLD_FONTS, 25), fill=(25, 15, 0, 255), anchor="mm")
 
-    draw.text((ix, 375), "Duration :", font=meta_f, fill=(200,200,200))
-    draw.text((ix+160, 375), duration, font=meta_f, fill=accent)
+    # ---- title (2 lines, handwriting font) ----
+    f_title = _load(_TITLE_FONTS, 58)
+    lines = _wrap_2_lines(d, title or "Unknown Title", f_title, 500)
+    for i, ln in enumerate(lines):
+        d.text((80, 215 + i * 56), ln, font=f_title, fill=white, anchor="lm", stroke_width=1, stroke_fill=white)
 
-    draw.text((ix, 420), "Views :", font=meta_f, fill=(200,200,200))
-    draw.text((ix+160, 420), views, font=meta_f, fill=accent)
+    # ---- orange small line ----
+    d.rounded_rectangle((80, 337, 181, 342), 2, fill=ORANGE)
 
-    draw.text((ix, 465), "Player :", font=meta_f, fill=(200,200,200))
-    draw.text((ix+160, 465), f"@{player_username}", font=meta_f, fill=accent)
+    # ---- channel + views | duration ----
+    d.text((80, 392), _fit_text(d, artist or "Unknown", _load(_BOLD_FONTS, 37), 500),
+           font=_load(_BOLD_FONTS, 37), fill=(238, 238, 245, 255), anchor="lm")
+    vtxt = _fmt_views(views)
+    info = (f"{vtxt} Views  |  " if vtxt else "") + f"{duration or '0:00'} Minutes"
+    d.text((80, 432), info, font=_load(_BOLD_FONTS, 27), fill=(215, 215, 225, 255), anchor="lm")
 
-    bx, by, bw = ix, 530, 600
-    draw.line((bx, by, bx+bw, by), fill=(170,170,170), width=6)
-    draw.line((bx, by, bx+bw*0.45, by), fill=accent, width=6)
+    # ---- progress bar ----
+    bx0, bx1, by = 80, 510, 490
+    total = _dur_to_sec(duration)
+    cur = int(total * random.uniform(0.15, 0.55)) if total else 0
+    frac = (cur / total) if total else 0.34
+    d.rounded_rectangle((bx0, by - 4, bx1, by + 4), 4, fill=(120, 120, 140, 255))
+    kx = bx0 + int((bx1 - bx0) * frac)
+    d.rounded_rectangle((bx0, by - 4, kx, by + 4), 4, fill=ORANGE)
+    d.ellipse((kx - 13, by - 13, kx + 13, by + 13), fill=white)
+    f_t = _load(_BOLD_FONTS, 20)
+    d.text((bx0, 524), _sec_to_dur(cur), font=f_t, fill=(225, 225, 232, 255), anchor="lm")
+    d.text((bx1, 524), duration or "0:00", font=f_t, fill=(225, 225, 232, 255), anchor="rm")
 
-    draw.text((bx, by+18), "00:00", font=small_f, fill=(180,180,180))
-    draw.text((bx+bw-55, by+18), duration, font=small_f, fill=(180,180,180))
+    # ---- Player name ----
+    d.text((80, 574), f"Player :  {_bot_username()}", font=_load(_BOLD_FONTS, 29),
+           fill=(205, 205, 215, 255), anchor="lm")
 
-    wm = "Dev :- @kirti_bots"
-    w = small_f.getlength(wm)
-    draw.text((1280-w-40, 680), wm, font=small_f, fill=(255, 255, 0))
+    # ---- By text (bottom right) ----
+    d.text((1255, 687), BY_TEXT, font=_load(_BOLD_FONTS, 27), fill=BY_COLOR, anchor="rm")
 
-    bg.save(path)
-
-    if os.path.exists(temp):
-        os.remove(temp)
-
+    os.makedirs(os.path.dirname(path) or "", exist_ok=True) if os.path.dirname(path) else None
+    canvas.convert("RGB").save(path, "JPEG", quality=92)
     return path
 
-# ======================================================
-# ©️ 2025-26 All Rights Reserved by Purvi Bots (Im-Notcoder) 😎
 
-# 🧑‍💻 Developer : t.me/TheSigmaCoder
-# 🔗 Source link : GitHub.com/Im-Notcoder/Hina-Music
-# 📢 Telegram channel : t.me/Purvi_Bots
-# =======================================================
+async def _download(session, vidid: str):
+    for q in ("maxresdefault", "sddefault", "hqdefault", "mqdefault"):
+        try:
+            async with session.get(
+                f"https://i.ytimg.com/vi/{vidid}/{q}.jpg",
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as r:
+                if r.status == 200:
+                    img = Image.open(io.BytesIO(await r.read())).convert("RGB")
+                    if img.width > 200:
+                        return img
+        except Exception:
+            continue
+    return None
+
+
+def _views_of(r):
+    vc = r.get("viewCount") or {}
+    if isinstance(vc, dict):
+        return vc.get("short") or vc.get("text")
+    return vc
+
+
+async def _meta(session, videoid: str):
+    """(title, artist, duration, views) -- jo library mile usse; sab fail ho to oEmbed."""
+    url = f"https://www.youtube.com/watch?v={videoid}"
+    # 1) py_yt
+    try:
+        from py_yt import VideosSearch
+
+        r = (await VideosSearch(url, limit=1).next())["result"][0]
+        return r.get("title"), (r.get("channel") or {}).get("name"), r.get("duration"), _views_of(r)
+    except Exception:
+        pass
+    # 2) youtubesearchpython (async)
+    try:
+        from youtubesearchpython.__future__ import VideosSearch
+
+        r = (await VideosSearch(url, limit=1).next())["result"][0]
+        return r.get("title"), (r.get("channel") or {}).get("name"), r.get("duration"), _views_of(r)
+    except Exception:
+        pass
+    # 3) youtubesearchpython (sync)
+    try:
+        from youtubesearchpython import VideosSearch
+
+        res = await asyncio.get_running_loop().run_in_executor(
+            None, lambda: VideosSearch(url, limit=1).result()
+        )
+        r = res["result"][0]
+        return r.get("title"), (r.get("channel") or {}).get("name"), r.get("duration"), _views_of(r)
+    except Exception:
+        pass
+    # 4) YouTube oEmbed (kisi library ki zarurat nahi)
+    try:
+        async with session.get(
+            "https://www.youtube.com/oembed",
+            params={"url": url, "format": "json"},
+            timeout=aiohttp.ClientTimeout(total=8),
+        ) as r:
+            if r.status == 200:
+                j = await r.json()
+                return j.get("title"), j.get("author_name"), None, None
+    except Exception:
+        pass
+    return None, None, None, None
+
+
+async def get_thumb(videoid, *args, title=None, artist=None, duration=None, views=None, **kwargs):
+    """NOW PLAYING orange-card thumbnail banata hai. Fail => YouTube thumb URL.
+
+    Purane code ke saare call styles chalte hain: get_thumb(vidid),
+    get_thumb(vidid, user_id), get_thumb(vidid, a, b, c ...) -- extra args ignore.
+    """
+    videoid = str(videoid)
+    title = title if isinstance(title, str) else None
+    artist = artist if isinstance(artist, str) else None
+    duration = duration if isinstance(duration, str) else None
+    fallback = f"https://i.ytimg.com/vi/{videoid}/hqdefault.jpg"
+
+    # har baar naya color chahiye isliye cache reuse nahi karte; purani files hata do
+    os.makedirs("cache", exist_ok=True)
+    for old in glob.glob(f"cache/{videoid}_np_*.jpg"):
+        try:
+            os.remove(old)
+        except Exception:
+            pass
+    path = f"cache/{videoid}_np_{random.randint(1000, 9999)}.jpg"
+    try:
+        async with aiohttp.ClientSession() as session:
+            if not (title and artist and duration and views):
+                t, a, dur, v = await _meta(session, videoid)
+                title, artist, duration, views = title or t, artist or a, duration or dur, views or v
+            cover = await _download(session, videoid)
+        if cover is None:
+            print(f"[THUMB] cover download fail for {videoid}")
+            return fallback
+        await asyncio.get_running_loop().run_in_executor(
+            None,
+            compose_thumb,
+            cover,
+            title or "Unknown Title",
+            artist or "YouTube",
+            duration or "0:00",
+            path,
+            views,
+        )
+        return path
+    except Exception:
+        print("[THUMB] FAIL -> fallback image. Error:")
+        traceback.print_exc()
+        return fallback
+
+
+gen_thumb = get_thumb  # purane naam se bhi chale
