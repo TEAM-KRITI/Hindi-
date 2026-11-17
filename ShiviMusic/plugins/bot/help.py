@@ -12,6 +12,7 @@ from typing import Union
 import random
 
 from pyrogram import filters, types
+from pyrogram.errors import MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, Message, InputMediaPhoto
 
 from ShiviMusic import app
@@ -142,36 +143,29 @@ async def helper_cb(client, CallbackQuery, _):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = help_back_markup(_)
-    if cb == "hb1":
-        await CallbackQuery.edit_message_text(helpers.HELP_1, reply_markup=keyboard)
-    elif cb == "hb2":
-        await CallbackQuery.edit_message_text(helpers.HELP_2, reply_markup=keyboard)
-    elif cb == "hb3":
-        await CallbackQuery.edit_message_text(helpers.HELP_3, reply_markup=keyboard)
-    elif cb == "hb4":
-        await CallbackQuery.edit_message_text(helpers.HELP_4, reply_markup=keyboard)
-    elif cb == "hb5":
-        await CallbackQuery.edit_message_text(helpers.HELP_5, reply_markup=keyboard)
-    elif cb == "hb6":
-        await CallbackQuery.edit_message_text(helpers.HELP_6, reply_markup=keyboard)
-    elif cb == "hb7":
-        await CallbackQuery.edit_message_text(helpers.HELP_7, reply_markup=keyboard)
-    elif cb == "hb8":
-        await CallbackQuery.edit_message_text(helpers.HELP_8, reply_markup=keyboard)
-    elif cb == "hb9":
-        await CallbackQuery.edit_message_text(helpers.HELP_9, reply_markup=keyboard)
-    elif cb == "hb10":
-        await CallbackQuery.edit_message_text(helpers.HELP_10, reply_markup=keyboard)
-    elif cb == "hb11":
-        await CallbackQuery.edit_message_text(helpers.HELP_11, reply_markup=keyboard)
-    elif cb == "hb12":
-        await CallbackQuery.edit_message_text(helpers.HELP_12, reply_markup=keyboard)
-    elif cb == "hb13":
-        await CallbackQuery.edit_message_text(helpers.HELP_13, reply_markup=keyboard)
-    elif cb == "hb14":
-        await CallbackQuery.edit_message_text(helpers.HELP_14, reply_markup=keyboard)
-    elif cb == "hb15":
-        await CallbackQuery.edit_message_text(helpers.HELP_15, reply_markup=keyboard)
+    try:
+        num = int(cb.replace("hb", ""))
+        text = getattr(helpers, f"HELP_{num}")
+    except (ValueError, AttributeError):
+        return await CallbackQuery.answer()
+    try:
+        await CallbackQuery.edit_message_text(text, reply_markup=keyboard)
+    except MessageNotModified:
+        await CallbackQuery.answer()
+    except Exception:
+        # Help panel photo caption hai (limit 1024 chars). Lamba text (jaise
+        # play-info) caption me fit nahi hota -> photo hata ke text bhejo.
+        try:
+            await CallbackQuery.message.delete()
+        except Exception:
+            pass
+        await client.send_message(
+            CallbackQuery.message.chat.id,
+            text,
+            reply_markup=keyboard,
+            disable_web_page_preview=True,
+        )
+
 
 # ===========================================================
 # ©️ 2025-26 All Rights Reserved by Purvi Bots (Im-Notcoder) 😎
