@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H = 1280, 720
 BLUR_RADIUS = 30
 ORANGE = (255, 140, 0, 255)
-BY_TEXT = "By : @kirti_bots"  # neeche right me yellow text
+BY_TEXT = "By : @PurviBots"  # neeche right me yellow text
 BY_COLOR = (255, 238, 0, 255)
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
@@ -56,6 +56,22 @@ _MED_FONTS = [
     _a("font.ttf"),
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
 ]
+
+
+_SAFE_FONTS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    _a("Poppins-Bold.ttf"),
+]
+
+
+def _log(msg):
+    try:
+        from ShiviMusic.logging import LOGGER
+
+        LOGGER(__name__).error(msg)
+    except Exception:
+        print(msg)
 
 
 def _load(cands, size):
@@ -135,7 +151,7 @@ def _fmt_views(v):
     if isinstance(v, str):
         digits = "".join(ch for ch in v if ch.isdigit())
         if not digits:
-            return v.strip() or None
+            return None
         if any(ch in v for ch in "KMBkmb"):
             return v.split(" ")[0].upper()
         n = int(digits)
@@ -185,10 +201,12 @@ def _bot_username():
             return "@" + str(config.BOT_USERNAME).lstrip("@")
     except Exception:
         pass
-    return "@Kirtiprobot"
+    return "@MusicBot"
 
 
-def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, path: str, views=None):
+def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, path: str, views=None, safe=False):
+    TF = _SAFE_FONTS if safe else _TITLE_FONTS
+    BF = _SAFE_FONTS if safe else _BOLD_FONTS
     cover = cover.convert("RGB")
     canvas = _blurred_background(cover).convert("RGBA")
     white = (255, 255, 255, 255)
@@ -206,10 +224,10 @@ def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, pa
 
     # ---- NOW PLAYING pill ----
     d.rounded_rectangle((80, 116, 326, 154), 19, fill=ORANGE)
-    d.text((203, 136), "NOW PLAYING", font=_load(_BOLD_FONTS, 25), fill=(25, 15, 0, 255), anchor="mm")
+    d.text((203, 136), "NOW PLAYING", font=_load(BF, 25), fill=(25, 15, 0, 255), anchor="mm")
 
     # ---- title (2 lines, handwriting font) ----
-    f_title = _load(_TITLE_FONTS, 58)
+    f_title = _load(TF, 58)
     lines = _wrap_2_lines(d, title or "Unknown Title", f_title, 500)
     for i, ln in enumerate(lines):
         d.text((80, 215 + i * 56), ln, font=f_title, fill=white, anchor="lm", stroke_width=1, stroke_fill=white)
@@ -218,11 +236,11 @@ def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, pa
     d.rounded_rectangle((80, 337, 181, 342), 2, fill=ORANGE)
 
     # ---- channel + views | duration ----
-    d.text((80, 392), _fit_text(d, artist or "Unknown", _load(_BOLD_FONTS, 37), 500),
-           font=_load(_BOLD_FONTS, 37), fill=(238, 238, 245, 255), anchor="lm")
+    d.text((80, 392), _fit_text(d, artist or "Unknown", _load(BF, 37), 500),
+           font=_load(BF, 37), fill=(238, 238, 245, 255), anchor="lm")
     vtxt = _fmt_views(views)
     info = (f"{vtxt} Views  |  " if vtxt else "") + f"{duration or '0:00'} Minutes"
-    d.text((80, 432), info, font=_load(_BOLD_FONTS, 27), fill=(215, 215, 225, 255), anchor="lm")
+    d.text((80, 432), info, font=_load(BF, 27), fill=(215, 215, 225, 255), anchor="lm")
 
     # ---- progress bar ----
     bx0, bx1, by = 80, 510, 490
@@ -233,16 +251,16 @@ def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, pa
     kx = bx0 + int((bx1 - bx0) * frac)
     d.rounded_rectangle((bx0, by - 4, kx, by + 4), 4, fill=ORANGE)
     d.ellipse((kx - 13, by - 13, kx + 13, by + 13), fill=white)
-    f_t = _load(_BOLD_FONTS, 20)
+    f_t = _load(BF, 20)
     d.text((bx0, 524), _sec_to_dur(cur), font=f_t, fill=(225, 225, 232, 255), anchor="lm")
     d.text((bx1, 524), duration or "0:00", font=f_t, fill=(225, 225, 232, 255), anchor="rm")
 
     # ---- Player name ----
-    d.text((80, 574), f"Player :  {_bot_username()}", font=_load(_BOLD_FONTS, 29),
+    d.text((80, 574), f"Player :  {_bot_username()}", font=_load(BF, 29),
            fill=(205, 205, 215, 255), anchor="lm")
 
     # ---- By text (bottom right) ----
-    d.text((1255, 687), BY_TEXT, font=_load(_BOLD_FONTS, 27), fill=BY_COLOR, anchor="rm")
+    d.text((1255, 687), BY_TEXT, font=_load(BF, 27), fill=BY_COLOR, anchor="rm")
 
     os.makedirs(os.path.dirname(path) or "", exist_ok=True) if os.path.dirname(path) else None
     canvas.convert("RGB").save(path, "JPEG", quality=92)
@@ -354,10 +372,11 @@ async def _meta(session, videoid: str):
 
 
 async def get_thumb(videoid, *args, title=None, artist=None, duration=None, views=None, **kwargs):
-    """NOW PLAYING orange-card thumbnail banata hai. Fail => YouTube thumb URL.
+    """NOW PLAYING orange-card thumbnail banata hai.
 
     Purane code ke saare call styles chalte hain: get_thumb(vidid),
     get_thumb(vidid, user_id), get_thumb(vidid, a, b, c ...) -- extra args ignore.
+    Kuch bhi fail ho to bhi card hi banta hai (sirf aakhri option me plain photo).
     """
     videoid = str(videoid)
     title = title if isinstance(title, str) else None
@@ -365,7 +384,6 @@ async def get_thumb(videoid, *args, title=None, artist=None, duration=None, view
     duration = duration if isinstance(duration, str) else None
     fallback = f"https://i.ytimg.com/vi/{videoid}/hqdefault.jpg"
 
-    # har baar naya color chahiye isliye cache reuse nahi karte; purani files hata do
     os.makedirs("cache", exist_ok=True)
     for old in glob.glob(f"cache/{videoid}_np_*.jpg"):
         try:
@@ -373,30 +391,48 @@ async def get_thumb(videoid, *args, title=None, artist=None, duration=None, view
         except Exception:
             pass
     path = f"cache/{videoid}_np_{random.randint(1000, 9999)}.jpg"
+
+    cover = None
     try:
         async with aiohttp.ClientSession() as session:
             if not (title and artist and duration and views):
-                t, a, dur, v = await _meta(session, videoid)
-                title, artist, duration, views = title or t, artist or a, duration or dur, views or v
+                try:
+                    t, a, dur, v = await _meta(session, videoid)
+                    title, artist, duration, views = title or t, artist or a, duration or dur, views or v
+                except Exception as e:
+                    _log(f"[THUMB] meta fail {videoid}: {e!r}")
             cover = await _download(session, videoid)
-        if cover is None:
-            print(f"[THUMB] cover download fail for {videoid}")
-            return fallback
-        await asyncio.get_running_loop().run_in_executor(
-            None,
-            compose_thumb,
-            cover,
-            title or "Unknown Title",
-            artist or "YouTube",
-            duration or "0:00",
-            path,
-            views,
-        )
-        return path
-    except Exception:
-        print("[THUMB] FAIL -> fallback image. Error:")
-        traceback.print_exc()
+    except Exception as e:
+        _log(f"[THUMB] network fail {videoid}: {e!r}")
+
+    # cover na mile to bot ki apni image (assets) se card bana do
+    if cover is None:
+        _log(f"[THUMB] cover download fail for {videoid} -> local image use ho rahi hai")
+        for name in ("thum.png", "upic.png"):
+            try:
+                cover = Image.open(_a(name)).convert("RGB")
+                break
+            except Exception:
+                continue
+    if cover is None:
         return fallback
+
+    args_ = (
+        cover,
+        title or "Unknown Title",
+        artist or "YouTube",
+        duration or "0:00",
+        path,
+        views,
+    )
+    loop = asyncio.get_running_loop()
+    for safe in (False, True):
+        try:
+            await loop.run_in_executor(None, lambda: compose_thumb(*args_, safe=safe))
+            return path
+        except Exception:
+            _log(f"[THUMB] compose fail (safe={safe}) for {videoid}:\n{traceback.format_exc()}")
+    return fallback
 
 
 gen_thumb = get_thumb  # purane naam se bhi chale
