@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H = 1280, 720
 BLUR_RADIUS = 30
 ORANGE = (255, 140, 0, 255)
-BY_TEXT = "By : @kirti_bots"  # neeche right me yellow text
+BY_TEXT = "By : @PurviBots"  # neeche right me yellow text
 BY_COLOR = (255, 238, 0, 255)
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
@@ -185,7 +185,7 @@ def _bot_username():
             return "@" + str(config.BOT_USERNAME).lstrip("@")
     except Exception:
         pass
-    return "@Kirtiprobot"
+    return "@MusicBot"
 
 
 def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, path: str, views=None):
@@ -249,6 +249,42 @@ def compose_thumb(cover: Image.Image, title: str, artist: str, duration: str, pa
     return path
 
 
+def _trim_bars(img: Image.Image) -> Image.Image:
+    """YouTube hqdefault/sddefault me upar-neeche kali patti (letterbox) hoti hai -- use hata deta hai."""
+    try:
+        g = img.convert("L")
+        w, h = g.size
+        rows = list(g.resize((1, h), Image.BOX).getdata())
+        top = 0
+        while top < h // 3 and rows[top] < 14:
+            top += 1
+        bot = h
+        while bot > h - h // 3 and rows[bot - 1] < 14:
+            bot -= 1
+        cols = list(g.resize((w, 1), Image.BOX).getdata())
+        left = 0
+        while left < w // 3 and cols[left] < 14:
+            left += 1
+        right = w
+        while right > w - w // 3 and cols[right - 1] < 14:
+            right -= 1
+        # chhoti si dark border ko mat kaato (sirf asli patti)
+        if top < h * 0.04:
+            top = 0
+        if h - bot < h * 0.04:
+            bot = h
+        if left < w * 0.04:
+            left = 0
+        if w - right < w * 0.04:
+            right = w
+        if (top, bot, left, right) != (0, h, 0, w):
+            # 2px extra andar se, taaki patti ka kinara na bache
+            return img.crop((left, top + (2 if top else 0), right, bot - (2 if bot < h else 0)))
+    except Exception:
+        pass
+    return img
+
+
 async def _download(session, vidid: str):
     for q in ("maxresdefault", "sddefault", "hqdefault", "mqdefault"):
         try:
@@ -259,7 +295,7 @@ async def _download(session, vidid: str):
                 if r.status == 200:
                     img = Image.open(io.BytesIO(await r.read())).convert("RGB")
                     if img.width > 200:
-                        return img
+                        return _trim_bars(img)
         except Exception:
             continue
     return None
