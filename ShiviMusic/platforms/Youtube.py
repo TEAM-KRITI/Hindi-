@@ -70,7 +70,7 @@ httpx.get = _patched_get
 
 # ── Config ────────────────────────────────────────────────────
 API_URL = os.getenv("API_URL", "https://www.riteshyt.in").rstrip("/")
-API_KEY = os.getenv("API_KEY", "riteshpermanent_6e2e564b3b37175d82acfce7")
+API_KEY = os.getenv("API_KEY", "riteshpermanent_115633af058ed3aeb59dbeed")
 
 # ── Dynamic imports with graceful fallbacks ───────────────────
 try:
@@ -93,7 +93,7 @@ except ImportError:
     Playlist = None
 
 try:
-    from AloneMusic.utils.database import is_on_off
+    from ShiviMusic.utils.database import is_on_off
 except ImportError:
 
     async def is_on_off(*a, **k):
@@ -101,7 +101,7 @@ except ImportError:
 
 
 try:
-    from AloneMusic.utils.formatters import time_to_seconds
+    from ShiviMusic.utils.formatters import time_to_seconds
 except ImportError:
 
     def time_to_seconds(s):
