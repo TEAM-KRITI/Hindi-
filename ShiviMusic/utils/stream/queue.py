@@ -18,7 +18,7 @@ from pyrogram.types import InlineKeyboardMarkup
 import config
 from ShiviMusic.utils.formatters import stream_type_text
 from ShiviMusic import Carbon, YouTube, app
-from ShiviMusic.core.call import Shivi as Sona
+from ShiviMusic.core.call import Shivi as Shivi
 from ShiviMusic.misc import db
 from ShiviMusic.utils.database import add_active_video_chat, is_active_chat
 from ShiviMusic.utils.exceptions import AssistantErr
