@@ -90,6 +90,33 @@ SPOTIFY_ALBUM_IMG_URL = "https://files.catbox.moe/2y5o3g.jpg"
 SPOTIFY_PLAYLIST_IMG_URL = "https://telegra.ph/file/d30d11c4365c025c25e3e.jpg"
 
 # ======================================================
+# ---------------- Startup validation ----------------
+_DEFAULT_API_ID = 24168862
+_missing = [
+    name
+    for name, val in (
+        ("BOT_TOKEN", BOT_TOKEN),
+        ("MONGO_DB_URI", MONGO_DB_URI),
+        ("STRING_SESSION", STRING1),
+    )
+    if not val
+]
+if _missing:
+    raise SystemExit(
+        "[ERROR] Heroku Config Vars me ye missing hain: " + ", ".join(_missing)
+    )
+
+if API_ID == _DEFAULT_API_ID:
+    print(
+        "[WARNING] API_ID/API_HASH Config Vars set nahi hain, code ke default "
+        "(shared) credentials use ho rahe hain. Telegram inhe throttle kar deta "
+        "hai -> 'ImportBotAuthorization timeout'. my.telegram.org se apna "
+        "API_ID aur API_HASH banakar Config Vars me daalo."
+    )
+
+BOT_TOKEN = BOT_TOKEN.strip()
+API_HASH = API_HASH.strip()
+
 BANNED_USERS = filters.user()
 adminlist = {}
 lyrical = {}
