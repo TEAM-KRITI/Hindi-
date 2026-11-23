@@ -12,7 +12,7 @@ from ShiviMusic.utils.database import get_served_users, get_served_chats
 from config import OWNER_ID
 
 IMAGE_URL = "https://yukiapi.site/file/dDRjJyef"
-INTERVAL = 6 * 60 * 60  # 6 hours → 24h me 2 broadcast
+INTERVAL = 12 * 60 * 60  # 12 hours → 24h me 2 broadcast
 
 _state = mongodb.auto_broadcast_state
 _lock = asyncio.Lock()
@@ -43,12 +43,19 @@ def _btn(text: str, **kwargs) -> InlineKeyboardButton:
 MESSAGES = f"""**๏ ᴛʜɪꜱ ɪꜱ <u>{app.mention}</u>
 
 ➻ ᴀ ꜰᴀꜱᴛ & ᴘᴏᴡєʀꜰᴜʟ ᴛєʟєɢʀᴀᴍ ᴍᴜꜱɪᴄ ᴘʟᴀʏєʀ ʙᴏᴛ 🎧
+ᴇɴᴊᴏʏ ʏᴏᴜʀ ꜰᴀᴠᴏʀɪᴛᴇ ꜱᴏɴɢꜱ ᴡɪᴛʜ ᴄʀʏꜱᴛᴀʟ ᴄʟєᴀʀ ꜱᴏᴜɴᴅ ǫᴜᴀʟɪᴛʏ ᴀɴᴅ ꜱᴍᴏᴏᴛʜ ᴘʟᴀʏʙᴀᴄᴋ ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠᴏɪᴄᴇ ᴄʜᴀᴛꜱ.
 
-▸ ꜰᴀꜱᴛ • ʟᴀɢ ꜰʀєє • ɴᴏ ᴀᴅꜱ 🍃
+<blockquote expandable>▸ ꜰᴀꜱᴛ • ʟᴀɢ ꜰʀєє • ɴᴏ ᴀᴅꜱ 🍃
 ▸ ᴘʟᴀʏʟɪꜱᴛ, ᴀᴜᴅɪᴏ, ᴠɪᴅєᴏ ᴘʟᴀʏ 🎥
 ▸ ᴀᴜᴛᴏᴘʟᴀʏ • ɴᴏɴ-ꜱᴛᴏᴘ ᴍᴜꜱɪᴄ 🔁
+▸ ʜɪɢʜ ǫᴜᴀʟɪᴛʏ ᴀᴜᴅɪᴏ ꜱᴛʀєᴀᴍɪɴɢ 🔊
+▸ ꜱᴜᴘᴘᴏʀᴛꜱ ʏᴏᴜᴛᴜʙє, ꜱᴘᴏᴛɪꜰʏ ʟɪɴᴋꜱ & ᴍᴏʀє 🎶
+▸ ꜱɪᴍᴘʟє ᴄᴏᴍᴍᴀɴᴅꜱ, ᴇᴀꜱʏ ᴛᴏ ᴜꜱє ✨
+▸ 24/7 ᴏɴʟɪɴє ᴡɪᴛʜ ꜱᴛᴀʙʟє ᴘᴇʀꜰᴏʀᴍᴀɴᴄє ⚡</blockquote>
 
-➻ ᴛᴀᴘ /start ᴛᴏ єxᴘʟᴏʀє ✨
+➻ ᴀᴅᴅ ᴍє ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ, ꜱᴛᴀʀᴛ ᴀ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴀɴᴅ ᴘʟᴀʏ ᴀɴʏ ꜱᴏɴɢ ᴡɪᴛʜ /play ꜱᴏɴɢ ɴᴀᴍє 🎧
+
+➻ ɴєᴇᴅ ʜєʟᴘ? ᴛᴀᴘ /start ᴀɴᴅ ᴇxᴘʟᴏʀє ᴀʟʟ ꜰєᴀᴛᴜʀєꜱ ✨
 
 ────────────────────**"""
 
@@ -133,11 +140,11 @@ async def send_broadcast():
 
     text = f"""**<u>✅ ᴀᴜᴛᴏ ʙʀᴏᴀᴅᴄᴀꜱᴛ ᴅᴏɴᴇ</u>**
 
-**👤 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ :** `{len(users)}`
+<blockquote expandable>**👤 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ :** `{len(users)}`
 **✅ ᴜꜱᴇʀꜱ ꜱᴇɴᴛ :** `{users_sent}`
 
 **👥 ᴛᴏᴛᴀʟ ɢʀᴏᴜᴘꜱ :** `{len(chats)}`
-**✅ ɢʀᴏᴜᴘꜱ ꜱᴇɴᴛ :** `{chats_sent}`
+**✅ ɢʀᴏᴜᴘꜱ ꜱᴇɴᴛ :** `{chats_sent}`</blockquote>
 """
 
     msg = await app.send_message(OWNER_ID, text, reply_markup=buttons)
@@ -164,7 +171,7 @@ async def auto_broadcast():
         except Exception as e:
             print(e)
 
-        # Har 60 sec me check, 24h poore hone par hi broadcast
+        # Har 60 sec me check, 12h poore hone par hi broadcast
         await asyncio.sleep(60)
 
 
