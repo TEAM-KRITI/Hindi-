@@ -3,6 +3,7 @@ import re
 import string
 
 from pyrogram import filters
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message
 from pytgcalls.exceptions import NoActiveGroupCall
 
@@ -13,9 +14,11 @@ from ShiviMusic.utils import seconds_to_min, time_to_seconds
 from ShiviMusic.utils.channelplay import get_channeplayCB
 from ShiviMusic.utils.decorators.language import languageCB
 from ShiviMusic.utils.decorators.play import PlayWrapper
-from ShiviMusic.utils.formatters import formats
+from ShiviMusic.utils.formatters import formats, stream_type_text
+from ShiviMusic.misc import SUDOERS, db
 from ShiviMusic.utils.inline import (
     botplaylist_markup,
+    incoming_markup,
     livestream_markup,
     playlist_markup,
     slider_markup,
@@ -96,6 +99,20 @@ def sanitize_query(query):
             return None
 
     return query
+
+
+def _incoming_caption(_, chat_id, details, track_id, user, video):
+    """Builds the 'Incoming Track Detected' card text."""
+    pos = len(db.get(chat_id) or []) + 1
+    link = f"https://t.me/{app.username}?start=info_{track_id}"
+    return _["incoming_1"].format(
+        pos,
+        link,
+        details["title"].title()[:40],
+        details["duration_min"] or "LIVE",
+        user.mention,
+        stream_type_text("video" if video else "audio"),
+    )
 
 
 @app.on_message(
@@ -482,38 +499,40 @@ async def play_commnd(
             return await play_logs(message, streamtype=f"Playlist : {plist_type}")
         else:
             if slider:
-                buttons = slider_markup(
+                buttons = incoming_markup(
                     _,
                     track_id,
                     message.from_user.id,
-                    query,
-                    0,
                     "c" if channel else "g",
                     "f" if fplay else "d",
+                    video=video,
+                    query=query,
                 )
                 await mystic.delete()
                 await message.reply_photo(
                     photo=details["thumb"],
-                    caption=_["play_10"].format(
-                        details["title"].title(),
-                        details["duration_min"],
+                    caption=_incoming_caption(
+                        _, chat_id, details, track_id, message.from_user, video
                     ),
                     reply_markup=InlineKeyboardMarkup(buttons),
                 )
                 return await play_logs(message, streamtype=f"Searched on Youtube")
             else:
-                buttons = track_markup(
+                buttons = incoming_markup(
                     _,
                     track_id,
                     message.from_user.id,
                     "c" if channel else "g",
                     "f" if fplay else "d",
+                    video=video,
                 )
                 await mystic.delete()
                 await message.reply_photo(
                     photo=img,
                     has_spoiler=True,
-                    caption=cap,
+                    caption=_incoming_caption(
+                        _, chat_id, details, track_id, message.from_user, video
+                    ),
                     reply_markup=InlineKeyboardMarkup(buttons),
                 )
                 return await play_logs(message, streamtype=f"URL Searched Inline")
@@ -750,3 +769,162 @@ async def slider_queries(client, CallbackQuery, _):
         return await CallbackQuery.edit_message_media(
             media=med, reply_markup=InlineKeyboardMarkup(buttons)
         )
+
+
+async def _can_play_now(CallbackQuery, entry):
+    clicker = CallbackQuery.from_user.id
+    if clicker in SUDOERS or clicker == entry.get("user_id"):
+        return True
+    try:
+        member = await app.get_chat_member(CallbackQuery.message.chat.id, clicker)
+        return member.status in (ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR)
+    except Exception:
+        return False
+
+
+@app.on_callback_query(filters.regex(r"^PlayNow ") & ~BANNED_USERS)
+@languageCB
+async def play_now(client, CallbackQuery, _):
+    """Queued song ko turant (force) play karta hai. Sirf requester / admin / sudo."""
+    try:
+        chat_id, vidid = CallbackQuery.data.split(None, 1)[1].split("|")
+        chat_id = int(chat_id)
+    except Exception:
+        return await CallbackQuery.answer()
+
+    queue = db.get(chat_id) or []
+    idx = next(
+        (i for i, t in enumerate(queue) if i > 0 and t.get("vidid") == vidid), None
+    )
+    if idx is None:
+        return await CallbackQuery.answer(
+            "» ʏᴇ ᴛʀᴀᴄᴋ ᴀʙ ǫᴜᴇᴜᴇ ᴍᴇ ɴᴀʜɪ ʜᴀɪ.", show_alert=True
+        )
+    entry = queue[idx]
+
+    if not await _can_play_now(CallbackQuery, entry):
+        return await CallbackQuery.answer(
+            "» sɪʀғ ʀᴇǫᴜᴇsᴛᴇʀ ʏᴀ ᴀᴅᴍɪɴ ʜɪ ᴘʟᴀʏ ɴᴏᴡ ᴅᴀʙᴀ sᴀᴋᴛᴇ ʜᴀɪ.", show_alert=True
+        )
+
+    try:
+        queue.pop(idx)
+    except Exception:
+        return await CallbackQuery.answer()
+    video = True if entry.get("streamtype") == "video" else None
+    req_id = entry.get("user_id") or clicker
+    try:
+        req_name = (await app.get_users(req_id)).first_name
+    except Exception:
+        req_name = CallbackQuery.from_user.first_name
+    try:
+        await CallbackQuery.message.delete()
+        await CallbackQuery.answer()
+    except Exception:
+        pass
+
+    mystic = await CallbackQuery.message.reply_text(_["play_1"])
+    try:
+        details, track_id = await YouTube.track(vidid, True)
+    except Exception:
+        return await mystic.edit_text(_["play_3"])
+    try:
+        await stream(
+            _,
+            mystic,
+            req_id,
+            details,
+            chat_id,
+            req_name,
+            CallbackQuery.message.chat.id,
+            video,
+            streamtype="youtube",
+            forceplay=True,
+        )
+    except Exception as e:
+        ex_type = type(e).__name__
+        err = e if ex_type == "AssistantErr" else _["general_2"].format(ex_type)
+        return await mystic.edit_text(err)
+    return await mystic.delete()
+
+
+@app.on_callback_query(filters.regex(r"^PlayNowQ") & ~BANNED_USERS)
+@languageCB
+async def play_now_q(client, CallbackQuery, _):
+    """Telegram file / SoundCloud / index link ke queued track ko turant play karta hai."""
+    try:
+        chat_id, token = CallbackQuery.data.split(None, 1)[1].split("|")
+        chat_id = int(chat_id)
+    except Exception:
+        return await CallbackQuery.answer()
+
+    queue = db.get(chat_id) or []
+    idx = next((i for i, t in enumerate(queue) if i > 0 and t.get("pn") == token), None)
+    if idx is None:
+        return await CallbackQuery.answer(
+            "» ʏᴇ ᴛʀᴀᴄᴋ ᴀʙ ǫᴜᴇᴜᴇ ᴍᴇ ɴᴀʜɪ ʜᴀɪ.", show_alert=True
+        )
+    entry = queue[idx]
+    if not await _can_play_now(CallbackQuery, entry):
+        return await CallbackQuery.answer(
+            "» sɪʀғ ʀᴇǫᴜᴇsᴛᴇʀ ʏᴀ ᴀᴅᴍɪɴ ʜɪ ᴘʟᴀʏ ɴᴏᴡ ᴅᴀʙᴀ sᴀᴋᴛᴇ ʜᴀɪ.", show_alert=True
+        )
+
+    try:
+        queue.pop(idx)
+    except Exception:
+        return await CallbackQuery.answer()
+
+    video = True if entry.get("streamtype") == "video" else None
+    req_id = entry.get("user_id") or CallbackQuery.from_user.id
+    try:
+        req_name = (await app.get_users(req_id)).first_name
+    except Exception:
+        req_name = CallbackQuery.from_user.first_name
+    orig = CallbackQuery.message.chat.id
+    try:
+        await CallbackQuery.message.delete()
+        await CallbackQuery.answer()
+    except Exception:
+        pass
+
+    mystic = await app.send_message(orig, _["play_1"])
+    fallback_link = f"https://t.me/{app.username}"
+    if entry.get("file") == "index_url":
+        streamtype, result, video = "index", entry.get("vidid"), video
+    elif entry.get("vidid") == "soundcloud":
+        streamtype = "soundcloud"
+        result = {
+            "filepath": entry["file"],
+            "title": entry["title"],
+            "duration_min": entry["dur"],
+        }
+    else:
+        streamtype = "telegram"
+        result = {
+            "path": entry["file"],
+            "link": fallback_link,
+            "title": entry["title"],
+            "dur": entry["dur"],
+        }
+    try:
+        await stream(
+            _,
+            mystic,
+            req_id,
+            result,
+            chat_id,
+            req_name,
+            orig,
+            video,
+            streamtype=streamtype,
+            forceplay=True,
+        )
+    except Exception as e:
+        ex_type = type(e).__name__
+        err = e if ex_type == "AssistantErr" else _["general_2"].format(ex_type)
+        return await mystic.edit_text(err)
+    try:
+        await mystic.delete()
+    except Exception:
+        pass
