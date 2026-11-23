@@ -176,3 +176,40 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
         ],
     ]
     return buttons
+
+
+def incoming_markup(_, videoid, user_id, channel, fplay, video=False, query=None, query_type=0):
+    """Screenshot-style card buttons: PLAY (red) + CLOSE (blue).
+    If `query` is given (search mode) a green ◁ ▷ row is added for next/previous result."""
+    mode = "v" if video else "a"
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=_["INC_PLAY"],
+                callback_data=f"MusicStream {videoid}|{user_id}|{mode}|{channel}|{fplay}",
+                style=enums.ButtonStyle.DANGER,
+            ),
+            InlineKeyboardButton(
+                text=_["INC_CLOSE"],
+                callback_data=f"forceclose {videoid}|{user_id}",
+                style=enums.ButtonStyle.PRIMARY,
+            ),
+        ]
+    ]
+    if query:
+        q = f"{query[:20]}"
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text="◁",
+                    callback_data=f"slider B|{query_type}|{q}|{user_id}|{channel}|{fplay}",
+                    style=enums.ButtonStyle.SUCCESS,
+                ),
+                InlineKeyboardButton(
+                    text="▷",
+                    callback_data=f"slider F|{query_type}|{q}|{user_id}|{channel}|{fplay}",
+                    style=enums.ButtonStyle.SUCCESS,
+                ),
+            ]
+        )
+    return buttons
