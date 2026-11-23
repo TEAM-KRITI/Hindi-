@@ -71,7 +71,37 @@ class Shivi(Client):
             return False
 
     async def start(self):
-        await super().start()
+        import asyncio
+
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                await super().start()
+                last_err = None
+                break
+            except errors.AccessTokenInvalid:
+                LOGGER(__name__).error("» BOT_TOKEN galat hai, BotFather se naya token lo.")
+                raise SystemExit(1)
+            except errors.ApiIdInvalid:
+                LOGGER(__name__).error("» API_ID / API_HASH galat hain (my.telegram.org).")
+                raise SystemExit(1)
+            except (TimeoutError, ConnectionError, OSError) as e:
+                last_err = e
+                LOGGER(__name__).warning(
+                    f"» Telegram login timeout (try {attempt}/3): {e}"
+                )
+                try:
+                    await super().stop()
+                except Exception:
+                    pass
+                await asyncio.sleep(5 * attempt)
+        if last_err is not None:
+            LOGGER(__name__).error(
+                "» Telegram se connect nahi ho paya. Check karo: BOT_TOKEN, "
+                "API_ID/API_HASH (apne khud ke), aur ki same BOT_TOKEN kisi aur "
+                "jagah to run nahi ho raha."
+            )
+            raise SystemExit(1)
         self.id = self.me.id
         self.name = self.me.first_name + " " + (self.me.last_name or "")
         self.username = self.me.username
