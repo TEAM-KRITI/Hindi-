@@ -8,103 +8,293 @@
 # 📩 DM for permission : @TheSigmaCoder
 # ===========================================================
 
-import asyncio
+import os
+import random
+import string
+from random import randint
 from typing import Union
+from pyrogram.types import InlineKeyboardMarkup
 
+import config
+from ShiviMusic.utils.formatters import stream_type_text
+from ShiviMusic import Carbon, YouTube, app
+from ShiviMusic.core.call import Shivi as Sona
 from ShiviMusic.misc import db
-from ShiviMusic.utils.autoplay import remember_played
-from ShiviMusic.utils.formatters import check_duration, seconds_to_min
-from config import autoclean, time_to_seconds
+from ShiviMusic.utils.database import add_active_video_chat, is_active_chat
+from ShiviMusic.utils.exceptions import AssistantErr
+from ShiviMusic.utils.inline import aq_markup, close_markup, stream_markup
+from ShiviMusic.utils.pastebin import ShiviBin as SonaBin
+from ShiviMusic.utils.stream.queue import put_queue, put_queue_index
+from ShiviMusic.utils.thumbnails import get_thumb
 
 
-async def put_queue(
-    chat_id,
-    original_chat_id,
-    file,
-    title,
-    duration,
-    user,
-    vidid,
-    user_id,
-    stream,
-    forceplay: Union[bool, str] = None,
-):
-    title = title.title()
+
+def _store_queue_msg(chat_id, position, msg):
+    """Save 'Added to queue' message so it can be deleted when that song starts playing."""
     try:
-        if vidid and isinstance(vidid, str) and len(vidid) == 11:
-            remember_played(chat_id, vidid, title)
+        db[chat_id][position]["queue_msg"] = msg
     except Exception:
         pass
+
+
+def _pn_token(chat_id, position):
+    """Queue entry ko chhota token deta hai taaki 'Play Now' use dhoondh sake."""
+    tok = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
     try:
-        duration_in_seconds = time_to_seconds(duration) - 3
-    except:
-        duration_in_seconds = 0
-    put = {
-        "title": title,
-        "dur": duration,
-        "streamtype": stream,
-        "by": user,
-        "user_id": user_id,
-        "chat_id": original_chat_id,
-        "file": file,
-        "vidid": vidid,
-        "seconds": duration_in_seconds,
-        "played": 0,
-    }
-    if forceplay:
-        check = db.get(chat_id)
-        if check:
-            check.insert(0, put)
-        else:
-            db[chat_id] = []
-            db[chat_id].append(put)
-    else:
-        db[chat_id].append(put)
-    autoclean.append(file)
+        db[chat_id][position]["pn"] = tok
+        return tok
+    except Exception:
+        return None
 
 
-async def put_queue_index(
+async def stream(
+    _,
+    mystic,
+    user_id,
+    result,
     chat_id,
+    user_name,
     original_chat_id,
-    file,
-    title,
-    duration,
-    user,
-    vidid,
-    stream,
+    video: Union[bool, str] = None,
+    streamtype: Union[bool, str] = None,
+    spotify: Union[bool, str] = None,
     forceplay: Union[bool, str] = None,
 ):
-    if "20.212.146.162" in vidid:
-        try:
-            dur = await asyncio.get_event_loop().run_in_executor(
-                None, check_duration, vidid
-            )
-            duration = seconds_to_min(dur)
-        except:
-            duration = "ᴜʀʟ sᴛʀᴇᴀᴍ"
-            dur = 0
-    else:
-        dur = 0
-    put = {
-        "title": title,
-        "dur": duration,
-        "streamtype": stream,
-        "by": user,
-        "chat_id": original_chat_id,
-        "file": file,
-        "vidid": vidid,
-        "seconds": dur,
-        "played": 0,
-    }
+    if not result:
+        return
     if forceplay:
-        check = db.get(chat_id)
-        if check:
-            check.insert(0, put)
+        await Sona.force_stop_stream(chat_id)
+
+    user_mention = f"[{user_name}](tg://user?id={user_id})"
+
+    if streamtype == "playlist":
+        msg = f"{_['play_19']}\n\n"
+        count = 0
+        for search in result:
+            if int(count) == config.PLAYLIST_FETCH_LIMIT:
+                continue
+            try:
+                title, duration_min, duration_sec, thumbnail, vidid = await YouTube.details(search, False if spotify else True)
+            except:
+                continue
+            if str(duration_min) == "None":
+                continue
+            if duration_sec > config.DURATION_LIMIT:
+                continue
+            if await is_active_chat(chat_id):
+                await put_queue(chat_id, original_chat_id, f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "ᴠɪᴅᴇᴏ 🎬" if video else "ᴀᴜᴅɪᴏ 🎧")
+                position = len(db.get(chat_id)) - 1
+                count += 1
+                msg += f"{count}. {title[:70]}\n"
+                msg += f"{_['play_20']} {position}\n\n"
+            else:
+                if not forceplay:
+                    db[chat_id] = []
+                status = True if video else None
+                try:
+                    file_path, direct = await YouTube.download(vidid, mystic, video=status, videoid=True)
+                except:
+                    raise AssistantErr(_["play_14"])
+                await Sona.join_call(chat_id, original_chat_id, file_path, video=status, image=thumbnail)
+                await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio", forceplay=forceplay)
+                img = await get_thumb(vidid, user_name=user_name)
+                button = stream_markup(_, chat_id)
+                run = await app.send_photo(
+                    original_chat_id,
+                    photo=img,
+                    has_spoiler=True,
+                    caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+                db[chat_id][0]["markup"] = "stream"
+        if count == 0:
+            return
         else:
-            db[chat_id] = []
-            db[chat_id].append(put)
-    else:
-        db[chat_id].append(put)
+            link = await SonaBin(msg)
+            lines = msg.count("\n")
+            if lines >= 17:
+                car = os.linesep.join(msg.split(os.linesep)[:17])
+            else:
+                car = msg
+            carbon = await Carbon.generate(car, randint(100, 10000000))
+            upl = close_markup(_)
+            return await app.send_photo(
+                original_chat_id,
+                photo=carbon,
+                caption=_["play_21"].format(position, link),
+                reply_markup=upl,
+            )
+
+    elif streamtype == "youtube":
+        link = result["link"]
+        vidid = result["vidid"]
+        title = (result["title"]).title()
+        duration_min = result["duration_min"]
+        thumbnail = result["thumb"]
+        status = True if video else None
+        try:
+            file_path, direct = await YouTube.download(vidid, mystic, videoid=True, video=status)
+        except:
+            raise AssistantErr(_["play_14"])
+        if await is_active_chat(chat_id):
+            await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio")
+            position = len(db.get(chat_id)) - 1
+            button = aq_markup(_, chat_id, vidid)
+            _qmsg = await app.send_message(
+                chat_id=original_chat_id,
+                text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+                disable_web_page_preview=True
+            )
+            _store_queue_msg(chat_id, position, _qmsg)
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            await Sona.join_call(chat_id, original_chat_id, file_path, video=status, image=thumbnail)
+            await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio", forceplay=forceplay)
+            img = await get_thumb(vidid, user_name=user_name)
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                original_chat_id,
+                photo=img,
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "stream"
+
+    elif streamtype == "soundcloud":
+        file_path = result["filepath"]
+        title = result["title"]
+        duration_min = result["duration_min"]
+        if await is_active_chat(chat_id):
+            await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "audio")
+            position = len(db.get(chat_id)) - 1
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
+            _qmsg = await app.send_message(
+                chat_id=original_chat_id,
+                text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+                disable_web_page_preview=True
+            )
+            _store_queue_msg(chat_id, position, _qmsg)
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            await Sona.join_call(chat_id, original_chat_id, file_path, video=None)
+            await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "audio", forceplay=forceplay)
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                original_chat_id,
+                photo=config.SOUNCLOUD_IMG_URL,
+                caption=_["stream_1"].format(config.SUPPORT_CHAT, title[:23], duration_min, user_mention, stream_type_text("audio")),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
+
+    elif streamtype == "telegram":
+        file_path = result["path"]
+        link = result["link"]
+        title = (result["title"]).title()
+        duration_min = result["dur"]
+        status = True if video else None
+        if await is_active_chat(chat_id):
+            await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "video" if video else "audio")
+            position = len(db.get(chat_id)) - 1
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
+            _qmsg = await app.send_message(
+                chat_id=original_chat_id,
+                text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+                disable_web_page_preview=True
+            )
+            _store_queue_msg(chat_id, position, _qmsg)
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            await Sona.join_call(chat_id, original_chat_id, file_path, video=status)
+            await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "video" if video else "audio", forceplay=forceplay)
+            if video:
+                await add_active_video_chat(chat_id)
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                original_chat_id,
+                photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL,
+                caption=_["stream_1"].format(link, title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
+
+    elif streamtype == "live":
+        link = result["link"]
+        vidid = result["vidid"]
+        title = (result["title"]).title()
+        thumbnail = result["thumb"]
+        duration_min = "Live Track"
+        status = True if video else None
+        if await is_active_chat(chat_id):
+            await put_queue(chat_id, original_chat_id, f"live_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio")
+            position = len(db.get(chat_id)) - 1
+            button = aq_markup(_, chat_id)
+            _qmsg = await app.send_message(
+                chat_id=original_chat_id,
+                text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+                disable_web_page_preview=True
+            )
+            _store_queue_msg(chat_id, position, _qmsg)
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            n, file_path = await YouTube.video(link)
+            if n == 0:
+                raise AssistantErr(_["str_3"])
+            await Sona.join_call(chat_id, original_chat_id, file_path, video=status, image=thumbnail if thumbnail else None)
+            await put_queue(chat_id, original_chat_id, f"live_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio", forceplay=forceplay)
+            img = await get_thumb(vidid, user_name=user_name)
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                original_chat_id,
+                photo=img,
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_mention, stream_type_text("video" if video else "audio")),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
+
+ 
+    elif streamtype == "index":
+        link = result
+        title = "ɪɴᴅᴇx ᴏʀ ᴍ3ᴜ8 ʟɪɴᴋ"
+        duration_min = "00:00"
+        if await is_active_chat(chat_id):
+            await put_queue_index(chat_id, original_chat_id, "index_url", title, duration_min, user_mention, link, "video" if video else "audio")
+            position = len(db.get(chat_id)) - 1
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
+            _qmsg = await mystic.edit_text(
+                text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+                disable_web_page_preview=True
+            )
+            _store_queue_msg(chat_id, position, _qmsg)
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            await Sona.join_call(chat_id, original_chat_id, link, video=True if video else None)
+            await put_queue_index(chat_id, original_chat_id, "index_url", title, duration_min, user_mention, link, "video" if video else "audio", forceplay=forceplay)
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                original_chat_id,
+                photo=config.STREAM_IMG_URL,
+                caption=_["stream_2"].format(user_mention),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
+            await mystic.delete()      
 
 # ===========================================================
 # ©️ 2025-26 All Rights Reserved by Purvi Bots (Im-Notcoder) 😎
