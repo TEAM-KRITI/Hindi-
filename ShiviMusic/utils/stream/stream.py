@@ -9,6 +9,8 @@
 # ===========================================================
 
 import os
+import random
+import string
 from random import randint
 from typing import Union
 from pyrogram.types import InlineKeyboardMarkup
@@ -33,6 +35,16 @@ def _store_queue_msg(chat_id, position, msg):
         db[chat_id][position]["queue_msg"] = msg
     except Exception:
         pass
+
+
+def _pn_token(chat_id, position):
+    """Queue entry ko chhota token deta hai taaki 'Play Now' use dhoondh sake."""
+    tok = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    try:
+        db[chat_id][position]["pn"] = tok
+        return tok
+    except Exception:
+        return None
 
 
 async def stream(
@@ -128,7 +140,7 @@ async def stream(
         if await is_active_chat(chat_id):
             await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, user_mention, vidid, user_id, "video" if video else "audio")
             position = len(db.get(chat_id)) - 1
-            button = aq_markup(_, chat_id)
+            button = aq_markup(_, chat_id, vidid)
             _qmsg = await app.send_message(
                 chat_id=original_chat_id,
                 text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
@@ -159,7 +171,7 @@ async def stream(
         if await is_active_chat(chat_id):
             await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "audio")
             position = len(db.get(chat_id)) - 1
-            button = aq_markup(_, chat_id)
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
             _qmsg = await app.send_message(
                 chat_id=original_chat_id,
                 text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
@@ -191,7 +203,7 @@ async def stream(
         if await is_active_chat(chat_id):
             await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_mention, streamtype, user_id, "video" if video else "audio")
             position = len(db.get(chat_id)) - 1
-            button = aq_markup(_, chat_id)
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
             _qmsg = await app.send_message(
                 chat_id=original_chat_id,
                 text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
@@ -261,7 +273,7 @@ async def stream(
         if await is_active_chat(chat_id):
             await put_queue_index(chat_id, original_chat_id, "index_url", title, duration_min, user_mention, link, "video" if video else "audio")
             position = len(db.get(chat_id)) - 1
-            button = aq_markup(_, chat_id)
+            button = aq_markup(_, chat_id, token=_pn_token(chat_id, position))
             _qmsg = await mystic.edit_text(
                 text=_["queue_4"].format(position, title[:27], duration_min, user_mention),
                 reply_markup=InlineKeyboardMarkup(button),
