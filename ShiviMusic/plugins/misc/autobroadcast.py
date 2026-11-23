@@ -12,7 +12,7 @@ from ShiviMusic.utils.database import get_served_users, get_served_chats
 from config import OWNER_ID
 
 IMAGE_URL = "https://yukiapi.site/file/dDRjJyef"
-INTERVAL = 6 * 60 * 60  # 6 hours → 24h me 4 broadcast
+INTERVAL = 6 * 60 * 60  # 6 hours → 24h me 2 broadcast
 
 _state = mongodb.auto_broadcast_state
 _lock = asyncio.Lock()
