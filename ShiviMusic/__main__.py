@@ -34,10 +34,6 @@ BUTTON_COLORS = [
     ("DANGER", "🔴"),    # red
 ]
 
-# Telegram connect retry settings
-START_RETRIES = 10      # kitni baar try karega
-START_RETRY_DELAY = 15  # pehla wait (sec), har retry pe badhta hai (max 60)
-
 
 def make_button(text: str, url: str) -> InlineKeyboardButton:
     """Random colour wala button (sirf colour random, text same)."""
@@ -53,33 +49,6 @@ def make_button(text: str, url: str) -> InlineKeyboardButton:
     except Exception:
         # Agar library colour style support nahi karti to emoji se colour
         return InlineKeyboardButton(f"{emoji} {text}", url=url)
-
-
-async def start_with_retry(client, name: str = "bot"):
-    """
-    Telegram timeout / network error aane par crash hone ki jagah
-    dobara try karta hai. Galat token jaise RPC errors pe retry nahi hota.
-    """
-    for attempt in range(1, START_RETRIES + 1):
-        try:
-            await client.start()
-            return
-        except (TimeoutError, ConnectionError, OSError) as e:
-            LOGGER("ShiviMusic").error(
-                f"{name} start failed ({attempt}/{START_RETRIES}): {e!r}"
-            )
-            # Half-open connection ho to saaf kar do
-            try:
-                await client.disconnect()
-            except Exception:
-                pass
-
-            if attempt == START_RETRIES:
-                raise
-
-            wait = min(START_RETRY_DELAY * attempt, 60)
-            LOGGER("ShiviMusic").info(f"Retrying {name} start in {wait}s...")
-            await asyncio.sleep(wait)
 
 
 async def send_startup_message():
@@ -141,7 +110,7 @@ async def init():
             BANNED_USERS.add(user_id)
     except:
         pass
-    await start_with_retry(app, "bot")
+    await app.start()
     for all_module in ALL_MODULES:
         importlib.import_module("ShiviMusic.plugins" + all_module)
     LOGGER("ShiviMusic.plugins").info("ᴀʟʟ ᴘʟᴜɢɪɴꜱ ʟᴏᴀᴅєᴅ ꜱᴜᴄᴄєꜱꜱꜰᴜʟʟʏ....🥳..")
