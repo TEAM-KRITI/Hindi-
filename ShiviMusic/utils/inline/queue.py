@@ -80,16 +80,33 @@ def queue_back_markup(_, CPLAY):
     return upl
 
 
-def aq_markup(_, chat_id):
-    buttons = [
-        [
+def aq_markup(_, chat_id, videoid=None, token=None):
+    """Queue card buttons. `videoid` (11-char YouTube id) adds a red PLAY NOW button."""
+    row = []
+    if videoid and isinstance(videoid, str) and len(videoid) == 11:
+        row.append(
             InlineKeyboardButton(
-                text="🗑 ᴄʟᴏsᴇ",
-                callback_data="close",
-                style=ButtonStyle.PRIMARY,
+                text=_["INC_PLAYNOW"],
+                callback_data=f"PlayNow {chat_id}|{videoid}",
+                style=ButtonStyle.DANGER,
             )
-        ],
-    ]
+        )
+    elif token:
+        row.append(
+            InlineKeyboardButton(
+                text=_["INC_PLAYNOW"],
+                callback_data=f"PlayNowQ {chat_id}|{token}",
+                style=ButtonStyle.DANGER,
+            )
+        )
+    row.append(
+        InlineKeyboardButton(
+            text="🗑 ᴄʟᴏsᴇ",
+            callback_data="close",
+            style=ButtonStyle.PRIMARY,
+        )
+    )
+    buttons = [row]
     return buttons
 
 # ======================================================
