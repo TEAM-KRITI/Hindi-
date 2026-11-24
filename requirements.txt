@@ -14,7 +14,7 @@ py-tgcalls==3.0.0
 ntgcalls>=3.0.0,<4.0.0
 pykeyboard
 kurigram>=2.2.26
-python-dotenv
+python-3.11.14
 pyyaml==6.0.1
 requests
 speedtest-cli
