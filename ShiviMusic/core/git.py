@@ -9,8 +9,12 @@
 # ===========================================================
 
 import asyncio
+import os
 import shlex
 from typing import Tuple
+
+# Heroku buildpack dynos have no git binary; don't crash on import.
+os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
@@ -39,7 +43,7 @@ def install_req(cmd: str) -> Tuple[str, str, int, int]:
     return asyncio.get_event_loop().run_until_complete(install_requirements())
 
 
-def git():
+def _git():
     REPO_LINK = config.UPSTREAM_REPO
     if config.GIT_TOKEN:
         GIT_USERNAME = REPO_LINK.split("com/")[1].split("/")[0]
@@ -79,6 +83,13 @@ def git():
             repo.git.reset("--hard", "FETCH_HEAD")
         install_req("pip3 install --no-cache-dir -r requirements.txt")
         LOGGER(__name__).info(f"» ꜰᴇᴛᴄʜɪɴɢ ᴜᴘᴅᴀᴛᴇs ꜰʀᴏᴍ ᴜᴘsᴛʀᴇᴀᴍ ʀᴇᴘᴏsɪᴛᴏʀʏ...")
+
+
+def git():
+    try:
+        _git()
+    except Exception as e:
+        LOGGER(__name__).warning(f"Git update check skipped: {e}")
 
 # ===========================================================
 # ©️ 2025-26 All Rights Reserved by Purvi Bots (Im-Notcoder) 😎
