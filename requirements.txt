@@ -23,7 +23,7 @@ unidecode
 yt-dlp
 youtube-search
 youtube-search-python
-httpx
+httpx<0.28
 opencv-python
 beautifulsoup4
 py-yt-search
