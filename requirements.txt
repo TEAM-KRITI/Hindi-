@@ -24,7 +24,7 @@ yt-dlp
 youtube-search
 youtube-search-python
 httpx==0.27.2
-opencv-python
+opencv-python-headless
 beautifulsoup4
 py-yt-search
 psutil
