@@ -1,5 +1,6 @@
 aiofiles
-aiohttp
+aiohttp 
+asyncio 
 dnspython
 ffmpeg-python
 gitpython
@@ -7,11 +8,11 @@ hachoir
 heroku3
 six
 apscheduler
-motor
+motor 
 pillow==9.5.0
 py-tgcalls==3.0.0
 ntgcalls>=3.0.0,<4.0.0
-pykeyboard-kurigram
+pykeyboard
 kurigram>=2.2.26
 python-dotenv
 pyyaml==6.0.1
@@ -23,7 +24,7 @@ unidecode
 yt-dlp
 youtube-search
 youtube-search-python
-httpx==0.27.2
+httpx
 opencv-python
 beautifulsoup4
 py-yt-search
