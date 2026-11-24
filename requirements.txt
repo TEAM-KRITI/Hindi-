@@ -29,3 +29,5 @@ beautifulsoup4
 py-yt-search
 psutil
 PyGithub
+git+https://github.com/AsmSafone/SafoneAPI
+
