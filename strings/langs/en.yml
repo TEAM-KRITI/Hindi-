@@ -173,9 +173,9 @@ queue_6 : "<b>🕚 ᴅυʀᴧᴛɪση :</b> υηᴋησᴡη ᴅυʀᴧᴛɪσ�
 queue_7 : "\n**❖ ᴄʟɪᴄᴋ ση ʙυᴛᴛση ʙєʟσᴡ ᴛσ ɢєᴛ ᴡʜσʟє ǫυєυєᴅ ʟɪsᴛ.**"
 queue_8 : "❖ <b>{0} ᴘʟᴧʏєʀ</b>\n\n🎄 <b>sᴛʀєᴧϻɪηɢ :</b> {1}\n\n🔗 <b>sᴛʀєᴧϻ ᴛʏᴘє :</b> {2}\n🥀 <b>ʀєǫυєsᴛєᴅ ʙʏ :</b> {3}\n{4}"
 
-stream_1 : "<b><blockquote>꯭⋆꯭𓆰⁠⁠⁠⁠⁠꯭♔꯭꯭꯭𝐒꯭ᴛ꯭ᴀ꯭ʀ꯭ᴛ꯭ᴇ꯭ᴅ ꯭𝐒꯭ᴛ꯭ʀ꯭ᴇ꯭ᴀ꯭ᴍ꯭ɪ꯭ɴ꯭ɢ ꯭𝐍꯭ᴏ꯭ᴡ ꯭༭꯭ ꯭𝆺꯭꯭𝅥🥂꯭─꯭̽─꯭</blockquote></b>\n<blockquote expandable><b>꯭✯ ꯭𝐓꯭ɪ꯭ᴛ꯭ʟ꯭ᴇ : </b> <a href=\"{0}\">{1}</a>\n<b>꯭✬ ꯭𝐃꯭ᴜ꯭ʀ꯭ᴀ꯭ᴛ꯭ɪ꯭ᴏ꯭ɴ : </b> {2}\n<b>꯭✭ ꯭𝐁꯭ʏ : </b> {3}</blockquote>\n<blockquote><b>꯭❖ ꯭𝐏꯭ᴏ꯭ᴡ꯭ᴇ꯭ʀ꯭ᴇ꯭ᴅ ꯭𝐁꯭ʏ : <a href=\"https://t.me/kirti_bots\">˹𝐊꯭ɪ꯭ʀ꯭ᴛ꯭ɪ ꯭𝐁꯭ᴏ꯭ᴛ꯭s˼</a></b></blockquote>"
+stream_1 : "<b><blockquote>🎧 Sᴛᴧʀᴛєᴅ Sᴛʀєᴧϻɪηɢ Nσᴡ</blockquote></b>\n<blockquote expandable><b>Tɪᴛʟє :</b> <a href=\"{0}\">{1}</a>\n<b>Dυʀᴧᴛɪση :</b> {2}\n<b>Bʏ :</b> {3}\n<b>Sᴛʀєᴧϻ Tʏᴘє :</b> {4}</blockquote>\n<blockquote><b>Pσᴡєʀєᴅ Bʏ : <a href=\"https://t.me/kirti_bots\">Kɪʀᴛɪ Bσᴛs</a></b></blockquote>"
 
-stream_2 : "<b><blockquote>꯭⋆꯭𓆰⁠⁠⁠⁠⁠꯭♔꯭꯭꯭𝐒꯭ᴛ꯭ᴀ꯭ʀ꯭ᴛ꯭ᴇ꯭ᴅ ꯭𝐒꯭ᴛ꯭ʀ꯭ᴇ꯭ᴀ꯭ᴍ꯭ɪ꯭ɴ꯭ɢ ꯭𝐍꯭ᴏ꯭ᴡ ꯭༭꯭ ꯭𝆺꯭꯭𝅥🥂꯭─꯭̽─꯭</blockquote></b>\n<blockquote><b>꯭✭ ꯭𝐁꯭ʏ : </b> {0}</blockquote>"
+stream_2 : "<b><blockquote>🎧 Sᴛᴧʀᴛєᴅ Sᴛʀєᴧϻɪηɢ Nσᴡ</blockquote></b>\n<blockquote><b>Bʏ :</b> {0}</blockquote>"
 
 
 CLOSE_BUTTON  : "• ᴄʟᴏsє •"
