@@ -56,14 +56,6 @@ def _control_rows(chat_id, style):
     ]
 
 
-def _fav_row(chat_id, style):
-    """Now-playing message ke neeche ❤️ Favourite / 📂 Playlist buttons."""
-    return [
-        InlineKeyboardButton(text="❤️ ꜰᴀᴠ", callback_data=f"FavNow {chat_id}", style=style),
-        InlineKeyboardButton(text="📂 ᴘʟᴀʏʟɪsᴛ", callback_data=f"PlPick {chat_id}", style=style),
-    ]
-
-
 def stream_markup_timer(_, chat_id, played, dur):
     style = random.choice(STYLES)
     played_sec = time_to_seconds(played)
@@ -79,7 +71,6 @@ def stream_markup_timer(_, chat_id, played, dur):
             ),
         ],
         _control_rows(chat_id, style),
-        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
@@ -91,7 +82,6 @@ def stream_markup(_, chat_id):
     style = random.choice(STYLES)
     buttons = [
         _control_rows(chat_id, style),
-        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
@@ -185,4 +175,41 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
             ),
         ],
     ]
+    return buttons
+
+
+def incoming_markup(_, videoid, user_id, channel, fplay, video=False, query=None, query_type=0):
+    """Screenshot-style card buttons: PLAY (red) + CLOSE (blue).
+    If `query` is given (search mode) a green ◁ ▷ row is added for next/previous result."""
+    mode = "v" if video else "a"
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=_["INC_PLAY"],
+                callback_data=f"MusicStream {videoid}|{user_id}|{mode}|{channel}|{fplay}",
+                style=enums.ButtonStyle.DANGER,
+            ),
+            InlineKeyboardButton(
+                text=_["INC_CLOSE"],
+                callback_data=f"forceclose {videoid}|{user_id}",
+                style=enums.ButtonStyle.PRIMARY,
+            ),
+        ]
+    ]
+    if query:
+        q = f"{query[:20]}"
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text="◁",
+                    callback_data=f"slider B|{query_type}|{q}|{user_id}|{channel}|{fplay}",
+                    style=enums.ButtonStyle.SUCCESS,
+                ),
+                InlineKeyboardButton(
+                    text="▷",
+                    callback_data=f"slider F|{query_type}|{q}|{user_id}|{channel}|{fplay}",
+                    style=enums.ButtonStyle.SUCCESS,
+                ),
+            ]
+        )
     return buttons
