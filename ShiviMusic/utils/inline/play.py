@@ -12,7 +12,6 @@ STYLES = [
     enums.ButtonStyle.DANGER
 ]
 
-
 def track_markup(_, videoid, user_id, channel, fplay):
     alone_style = random.choice(STYLES)
     group_style = random.choice([s for s in STYLES if s != alone_style])
@@ -58,12 +57,10 @@ def _control_rows(chat_id, style):
 
 
 def _fav_row(chat_id, style):
-    """Now-playing ke neeche 📂 Playlist / 🎭 Mood buttons."""
+    """Now-playing message ke neeche ❤️ Favourite / 📂 Playlist buttons."""
     return [
-        [
-            InlineKeyboardButton(text="📂 ᴘʟᴀʏʟɪsᴛ", callback_data=f"PlPick {chat_id}", style=style),
-            InlineKeyboardButton(text="🎭 ᴍᴏᴏᴅ", callback_data=f"MoodPick {chat_id}", style=style),
-        ],
+        InlineKeyboardButton(text="❤️ ꜰᴀᴠ", callback_data=f"FavNow {chat_id}", style=style),
+        InlineKeyboardButton(text="📂 ᴘʟᴀʏʟɪsᴛ", callback_data=f"PlPick {chat_id}", style=style),
     ]
 
 
@@ -82,7 +79,7 @@ def stream_markup_timer(_, chat_id, played, dur):
             ),
         ],
         _control_rows(chat_id, style),
-        *_fav_row(chat_id, style),
+        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
@@ -94,7 +91,7 @@ def stream_markup(_, chat_id):
     style = random.choice(STYLES)
     buttons = [
         _control_rows(chat_id, style),
-        *_fav_row(chat_id, style),
+        _fav_row(chat_id, style),
         [
             InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=style),
         ],
