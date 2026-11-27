@@ -155,7 +155,7 @@ def circle(pfp, size=(390, 390), brightness_factor=1.4):
 
 
 def welcomepic(pic, user, chatname, id, uname, brightness_factor=1.3):
-    """Kirti Music welcome card (ShiviMusic/utils/welcome_card.py)."""
+    """Kirti Music golden welcome card (ShiviMusic/utils/welcome_card.py)."""
     os.makedirs("downloads", exist_ok=True)
     output_path = f"downloads/welcome_{id}.png"
     return create_welcome_card(
@@ -164,8 +164,8 @@ def welcomepic(pic, user, chatname, id, uname, brightness_factor=1.3):
         username=uname,
         chat_title=chatname,
         out_path=output_path,
+        name=user,
         brand=BOT_NAME,
-        link=SUPPORT_CHANNEL,
     )
 
 
@@ -234,7 +234,24 @@ async def greet_new_member(_, member: ChatMemberUpdated):
     if not user:
         return
 
-    if member.new_chat_member and not member.old_chat_member and member.new_chat_member.status != "kicked":
+    new_status = member.new_chat_member.status
+    old_status = member.old_chat_member.status if member.old_chat_member else None
+    joined = new_status in (
+        enums.ChatMemberStatus.MEMBER,
+        enums.ChatMemberStatus.RESTRICTED,
+    ) and old_status in (
+        None,
+        enums.ChatMemberStatus.LEFT,
+        enums.ChatMemberStatus.BANNED,
+    )
+    if new_status == enums.ChatMemberStatus.RESTRICTED and not getattr(
+        member.new_chat_member, "is_member", True
+    ):
+        joined = False
+    if user.is_bot:
+        joined = False
+
+    if joined:
 
         try:
             pic = await app.download_media(
@@ -250,9 +267,10 @@ async def greet_new_member(_, member: ChatMemberUpdated):
             except:
                 pass
 
+        full_name = " ".join(x for x in (user.first_name, user.last_name) if x)
         welcomeimg = welcomepic(
             pic,
-            user.first_name,
+            full_name,
             member.chat.title,
             user.id,
             user.username
