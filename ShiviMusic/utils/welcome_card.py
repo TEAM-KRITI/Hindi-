@@ -31,10 +31,29 @@ def _ensure_assets():
     """Assets folder me file na ho (sirf .py upload hui ho) to embedded data se bana do."""
     global TEMPLATE, FONT_VAL
     import base64
-    from ShiviMusic.utils import welcome_assets_data as d
 
-    for var, path, data in (("TEMPLATE", TEMPLATE, d.TPL_WEBP), ("FONT_VAL", FONT_VAL, d.FONT_VAL)):
+    for var, path in (("TEMPLATE", TEMPLATE), ("FONT_VAL", FONT_VAL)):
         if os.path.isfile(path):
+            continue
+        alt = os.path.join("downloads", "welcome_assets", os.path.basename(path))
+        if os.path.isfile(alt):
+            globals()[var] = alt
+            continue
+        try:
+            from ShiviMusic.utils import welcome_assets_data as d
+            data = getattr(d, "TPL_WEBP" if var == "TEMPLATE" else "FONT_VAL", None)
+        except Exception:
+            data = None
+        if not data:
+            # embedded data purana hai / nahi hai -> font ke liye fallback
+            if var == "FONT_VAL":
+                for f in (
+                    os.path.join(ASSETS, "Poppins-Bold.ttf"),
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+                ):
+                    if os.path.isfile(f):
+                        globals()[var] = f
+                        break
             continue
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -156,7 +175,10 @@ def create_welcome_card(
     name     -> 'User Name' me dikhega (user ka naam). Na mile to @username.
     brand/link/hue_shift purane code ke saath compatibility ke liye hain.
     """
-    _ensure_assets()
+    try:
+        _ensure_assets()
+    except Exception:
+        pass
     tpl = Image.open(TEMPLATE).convert("RGBA")
     W, H = tpl.size
 
